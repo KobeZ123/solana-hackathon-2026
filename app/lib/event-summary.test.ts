@@ -29,7 +29,7 @@ describe("parseEventList", () => {
       },
       {
         event_pda: "B",
-        chain: { entry_fee: 1000000, capacity: 5, tickets_sold: 1 },
+        onchain: { entry_fee: 1000000, capacity: 5, tickets_sold: 1 },
       },
     ]);
     expect(a).toMatchObject({

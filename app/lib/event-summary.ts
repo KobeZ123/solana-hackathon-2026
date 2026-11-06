@@ -53,10 +53,10 @@ export function parseEventList(body: unknown): EventListItem[] {
   for (const entry of raw) {
     if (!entry || typeof entry !== "object") continue;
     const e = entry as Record<string, unknown>;
-    // The API may nest on-chain data under `chain`.
+    // The API may nest on-chain data under `onchain` (T31) or `chain`.
     const chain =
-      e.chain && typeof e.chain === "object"
-        ? (e.chain as Record<string, unknown>)
+      (e.onchain ?? e.chain) && typeof (e.onchain ?? e.chain) === "object"
+        ? ((e.onchain ?? e.chain) as Record<string, unknown>)
         : {};
     const pda = str(e.eventPda) ?? str(e.pda) ?? str(e.event_pda);
     if (!pda) continue;
