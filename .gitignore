@@ -55,3 +55,6 @@ test-ledger/
 .env.local
 .data/
 !.env.example
+
+# agent worktrees
+/.claude/worktrees/
