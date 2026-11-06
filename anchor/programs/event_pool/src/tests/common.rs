@@ -406,3 +406,18 @@ pub fn mutate_ticket(env: &mut TestEnv, ticket: &Pubkey, f: impl FnOnce(&mut Tic
     acc.data[..data.len()].copy_from_slice(&data);
     env.svm.set_account(*ticket, acc).unwrap();
 }
+
+pub fn check_in_ix(gate: &Pubkey, event: &Pubkey, member: &Pubkey) -> Instruction {
+    let (ticket, _) = ticket_pda(event, member);
+    Instruction {
+        program_id: PROGRAM_ID,
+        accounts: crate::accounts::CheckIn {
+            gate: *gate,
+            event: *event,
+            member: *member,
+            ticket,
+        }
+        .to_account_metas(None),
+        data: crate::instruction::CheckIn {}.data(),
+    }
+}

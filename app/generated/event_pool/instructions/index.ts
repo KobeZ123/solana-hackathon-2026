@@ -6,6 +6,7 @@
  * @see https://github.com/codama-idl/codama
  */
 
+export * from "./checkIn";
 export * from "./claim";
 export * from "./createEvent";
 export * from "./endEvent";
