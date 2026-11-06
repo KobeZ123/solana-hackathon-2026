@@ -58,4 +58,12 @@ pub mod event_pool {
     pub fn withdraw_host(ctx: Context<WithdrawHost>) -> Result<()> {
         instructions::withdraw_host::handler(ctx)
     }
+
+    pub fn join_event(ctx: Context<JoinEvent>, ticket_key: Pubkey) -> Result<()> {
+        instructions::join_event::handler(ctx, ticket_key)
+    }
+
+    pub fn rotate_ticket_key(ctx: Context<RotateTicketKey>, new_key: Pubkey) -> Result<()> {
+        instructions::rotate_ticket_key::handler(ctx, new_key)
+    }
 }
