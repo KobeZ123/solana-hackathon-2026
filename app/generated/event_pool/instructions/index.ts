@@ -6,4 +6,5 @@
  * @see https://github.com/codama-idl/codama
  */
 
-export * from "./vault";
+export * from "./createEvent";
+export * from "./setGate";

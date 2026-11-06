@@ -10,26 +10,29 @@ import {
   getAddressEncoder,
   getBytesEncoder,
   getProgramDerivedAddress,
+  getU64Encoder,
   type Address,
   type ProgramDerivedAddress,
 } from "@solana/kit";
 
-export type VaultSeeds = {
-  signer: Address;
+export type EventSeeds = {
+  host: Address;
+  eventId: number | bigint;
 };
 
-export async function findVaultPda(
-  seeds: VaultSeeds,
+export async function findEventPda(
+  seeds: EventSeeds,
   config: { programAddress?: Address | undefined } = {},
 ): Promise<ProgramDerivedAddress> {
   const {
-    programAddress = "7qrFugcNjGtUxaVzBwtBGYBmGQxAUs9prTwwNEdYPkXb" as Address<"7qrFugcNjGtUxaVzBwtBGYBmGQxAUs9prTwwNEdYPkXb">,
+    programAddress = "E4SJunPXu5ZyoiSpz9Nk4jUAQWjj7qif6fTBDjR1Ping" as Address<"E4SJunPXu5ZyoiSpz9Nk4jUAQWjj7qif6fTBDjR1Ping">,
   } = config;
   return await getProgramDerivedAddress({
     programAddress,
     seeds: [
-      getBytesEncoder().encode(new Uint8Array([118, 97, 117, 108, 116])),
-      getAddressEncoder().encode(seeds.signer),
+      getBytesEncoder().encode(new Uint8Array([101, 118, 101, 110, 116])),
+      getAddressEncoder().encode(seeds.host),
+      getU64Encoder().encode(seeds.eventId),
     ],
   });
 }
