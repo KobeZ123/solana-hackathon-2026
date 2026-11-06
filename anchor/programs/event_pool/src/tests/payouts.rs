@@ -1,7 +1,7 @@
 //! T13: end_event, claim, withdraw_host.
 //!
-//! Joined / checked-in state is fabricated via `support_state` until `join_event` / `check_in`
-//! are used here (see PR notes).
+//! Members join via the real `join_event`; check-ins are fabricated via `support_state` until
+//! `check_in` (T12) merges (see PR notes).
 use solana_sdk::{pubkey::Pubkey, signature::Keypair, signer::Signer};
 
 use super::common::*;
@@ -28,8 +28,8 @@ fn scenario(fee: u64, joined: usize, checked_in: usize, payout_bps: u16) -> (Tes
     let event = create_event_with(&mut env, &host, &params);
     let mut members = vec![];
     for i in 0..joined {
-        let m = env.funded(1);
-        fake_join(&mut env, &event, &m.pubkey());
+        let m = env.funded(3);
+        join_default(&mut env, &m, &event);
         if i < checked_in {
             fake_check_in(&mut env, &event, &m.pubkey());
         }

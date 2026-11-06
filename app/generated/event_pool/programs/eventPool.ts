@@ -21,14 +21,18 @@ import {
   parseClaimInstruction,
   parseCreateEventInstruction,
   parseEndEventInstruction,
+  parseJoinEventInstruction,
   parseRefundInstruction,
+  parseRotateTicketKeyInstruction,
   parseSetGateInstruction,
   parseWithdrawHostInstruction,
   type ParsedCancelEventInstruction,
   type ParsedClaimInstruction,
   type ParsedCreateEventInstruction,
   type ParsedEndEventInstruction,
+  type ParsedJoinEventInstruction,
   type ParsedRefundInstruction,
+  type ParsedRotateTicketKeyInstruction,
   type ParsedSetGateInstruction,
   type ParsedWithdrawHostInstruction,
 } from "../instructions";
@@ -77,7 +81,9 @@ export enum EventPoolInstruction {
   Claim,
   CreateEvent,
   EndEvent,
+  JoinEvent,
   Refund,
+  RotateTicketKey,
   SetGate,
   WithdrawHost,
 }
@@ -134,12 +140,34 @@ export function identifyEventPoolInstruction(
     containsBytes(
       data,
       fixEncoderSize(getBytesEncoder(), 8).encode(
+        new Uint8Array([10, 93, 234, 137, 237, 194, 224, 0]),
+      ),
+      0,
+    )
+  ) {
+    return EventPoolInstruction.JoinEvent;
+  }
+  if (
+    containsBytes(
+      data,
+      fixEncoderSize(getBytesEncoder(), 8).encode(
         new Uint8Array([2, 96, 183, 251, 63, 208, 46, 46]),
       ),
       0,
     )
   ) {
     return EventPoolInstruction.Refund;
+  }
+  if (
+    containsBytes(
+      data,
+      fixEncoderSize(getBytesEncoder(), 8).encode(
+        new Uint8Array([0, 197, 73, 196, 233, 18, 84, 77]),
+      ),
+      0,
+    )
+  ) {
+    return EventPoolInstruction.RotateTicketKey;
   }
   if (
     containsBytes(
@@ -184,8 +212,14 @@ export type ParsedEventPoolInstruction<
       instructionType: EventPoolInstruction.EndEvent;
     } & ParsedEndEventInstruction<TProgram>)
   | ({
+      instructionType: EventPoolInstruction.JoinEvent;
+    } & ParsedJoinEventInstruction<TProgram>)
+  | ({
       instructionType: EventPoolInstruction.Refund;
     } & ParsedRefundInstruction<TProgram>)
+  | ({
+      instructionType: EventPoolInstruction.RotateTicketKey;
+    } & ParsedRotateTicketKeyInstruction<TProgram>)
   | ({
       instructionType: EventPoolInstruction.SetGate;
     } & ParsedSetGateInstruction<TProgram>)
@@ -226,11 +260,25 @@ export function parseEventPoolInstruction<TProgram extends string>(
         ...parseEndEventInstruction(instruction),
       };
     }
+    case EventPoolInstruction.JoinEvent: {
+      assertIsInstructionWithAccounts(instruction);
+      return {
+        instructionType: EventPoolInstruction.JoinEvent,
+        ...parseJoinEventInstruction(instruction),
+      };
+    }
     case EventPoolInstruction.Refund: {
       assertIsInstructionWithAccounts(instruction);
       return {
         instructionType: EventPoolInstruction.Refund,
         ...parseRefundInstruction(instruction),
+      };
+    }
+    case EventPoolInstruction.RotateTicketKey: {
+      assertIsInstructionWithAccounts(instruction);
+      return {
+        instructionType: EventPoolInstruction.RotateTicketKey,
+        ...parseRotateTicketKeyInstruction(instruction),
       };
     }
     case EventPoolInstruction.SetGate: {

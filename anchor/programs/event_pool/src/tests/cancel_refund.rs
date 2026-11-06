@@ -1,6 +1,6 @@
 //! T14: cancel_event, refund.
 //!
-//! Joined state is fabricated via `support_state` (see PR notes).
+//! Members join via the real `join_event`.
 use solana_sdk::{pubkey::Pubkey, signature::Keypair, signer::Signer};
 
 use super::common::*;
@@ -25,7 +25,7 @@ fn scenario(joined: usize) -> (TestEnv, Scenario) {
     let mut members = vec![];
     for _ in 0..joined {
         let m = env.funded(1);
-        fake_join(&mut env, &event, &m.pubkey());
+        join_default(&mut env, &m, &event);
         members.push(m);
     }
     (
@@ -134,6 +134,23 @@ fn refund_returns_exact_fee_and_closes_ticket() {
     assert_eq!(env.balance(&vault), rent + 2 * FEE);
     assert!(!env.account_exists(&ticket));
     assert_eq!(env.get_event(&s.event).tickets_sold, 2);
+}
+
+#[test]
+fn join_on_cancelled_event_rejected() {
+    let (mut env, s) = scenario(1);
+    assert_ok(&cancel(&mut env, &s));
+    let late = env.funded(2);
+    let res = env.send(
+        &[join_event_ix(
+            &late.pubkey(),
+            &s.event,
+            &Pubkey::new_unique(),
+        )],
+        &late,
+        &[],
+    );
+    assert_program_err(&res, EventPoolError::EventNotOpen);
 }
 
 #[test]

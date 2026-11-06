@@ -10,6 +10,8 @@ export * from "./cancelEvent";
 export * from "./claim";
 export * from "./createEvent";
 export * from "./endEvent";
+export * from "./joinEvent";
 export * from "./refund";
+export * from "./rotateTicketKey";
 export * from "./setGate";
 export * from "./withdrawHost";
