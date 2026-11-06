@@ -53,3 +53,5 @@ test-ledger/
 test-ledger/
 *.keypair.json
 .env.local
+.data/
+!.env.example
