@@ -4,7 +4,6 @@
 use solana_sdk::{pubkey::Pubkey, signature::Keypair, signer::Signer};
 
 use super::common::*;
-use super::support_state::*;
 use crate::errors::EventPoolError;
 use crate::state::EventStatus;
 

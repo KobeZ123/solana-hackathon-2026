@@ -7,6 +7,7 @@
  */
 
 export * from "./cancelEvent";
+export * from "./checkIn";
 export * from "./claim";
 export * from "./createEvent";
 export * from "./endEvent";

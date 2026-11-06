@@ -18,13 +18,10 @@ pub use claim::*;
 pub use end_event::*;
 pub use withdraw_host::*;
 
-<<<<<<< HEAD
 pub mod check_in;
 pub use check_in::*;
-=======
 pub mod cancel_event;
 pub mod refund;
 
 pub use cancel_event::*;
 pub use refund::*;
->>>>>>> c1d7fc5 (T14: cancel_event, refund)

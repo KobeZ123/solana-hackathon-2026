@@ -18,6 +18,7 @@ import {
 } from "@solana/kit";
 import {
   parseCancelEventInstruction,
+  parseCheckInInstruction,
   parseClaimInstruction,
   parseCreateEventInstruction,
   parseEndEventInstruction,
@@ -27,6 +28,7 @@ import {
   parseSetGateInstruction,
   parseWithdrawHostInstruction,
   type ParsedCancelEventInstruction,
+  type ParsedCheckInInstruction,
   type ParsedClaimInstruction,
   type ParsedCreateEventInstruction,
   type ParsedEndEventInstruction,
@@ -78,6 +80,7 @@ export function identifyEventPoolAccount(
 
 export enum EventPoolInstruction {
   CancelEvent,
+  CheckIn,
   Claim,
   CreateEvent,
   EndEvent,
@@ -102,6 +105,17 @@ export function identifyEventPoolInstruction(
     )
   ) {
     return EventPoolInstruction.CancelEvent;
+  }
+  if (
+    containsBytes(
+      data,
+      fixEncoderSize(getBytesEncoder(), 8).encode(
+        new Uint8Array([209, 253, 4, 217, 250, 241, 207, 50]),
+      ),
+      0,
+    )
+  ) {
+    return EventPoolInstruction.CheckIn;
   }
   if (
     containsBytes(
@@ -203,6 +217,9 @@ export type ParsedEventPoolInstruction<
       instructionType: EventPoolInstruction.CancelEvent;
     } & ParsedCancelEventInstruction<TProgram>)
   | ({
+      instructionType: EventPoolInstruction.CheckIn;
+    } & ParsedCheckInInstruction<TProgram>)
+  | ({
       instructionType: EventPoolInstruction.Claim;
     } & ParsedClaimInstruction<TProgram>)
   | ({
@@ -237,6 +254,13 @@ export function parseEventPoolInstruction<TProgram extends string>(
       return {
         instructionType: EventPoolInstruction.CancelEvent,
         ...parseCancelEventInstruction(instruction),
+      };
+    }
+    case EventPoolInstruction.CheckIn: {
+      assertIsInstructionWithAccounts(instruction);
+      return {
+        instructionType: EventPoolInstruction.CheckIn,
+        ...parseCheckInInstruction(instruction),
       };
     }
     case EventPoolInstruction.Claim: {
