@@ -17,3 +17,6 @@ pub mod withdraw_host;
 pub use claim::*;
 pub use end_event::*;
 pub use withdraw_host::*;
+
+pub mod check_in;
+pub use check_in::*;

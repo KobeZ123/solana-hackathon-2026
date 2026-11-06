@@ -66,4 +66,8 @@ pub mod event_pool {
     pub fn rotate_ticket_key(ctx: Context<RotateTicketKey>, new_key: Pubkey) -> Result<()> {
         instructions::rotate_ticket_key::handler(ctx, new_key)
     }
+
+    pub fn check_in(ctx: Context<CheckIn>) -> Result<()> {
+        instructions::check_in::handler(ctx)
+    }
 }

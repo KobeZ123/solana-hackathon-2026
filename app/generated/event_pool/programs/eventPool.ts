@@ -17,6 +17,7 @@ import {
   type ReadonlyUint8Array,
 } from "@solana/kit";
 import {
+  parseCheckInInstruction,
   parseClaimInstruction,
   parseCreateEventInstruction,
   parseEndEventInstruction,
@@ -24,6 +25,7 @@ import {
   parseRotateTicketKeyInstruction,
   parseSetGateInstruction,
   parseWithdrawHostInstruction,
+  type ParsedCheckInInstruction,
   type ParsedClaimInstruction,
   type ParsedCreateEventInstruction,
   type ParsedEndEventInstruction,
@@ -73,6 +75,7 @@ export function identifyEventPoolAccount(
 }
 
 export enum EventPoolInstruction {
+  CheckIn,
   Claim,
   CreateEvent,
   EndEvent,
@@ -86,6 +89,17 @@ export function identifyEventPoolInstruction(
   instruction: { data: ReadonlyUint8Array } | ReadonlyUint8Array,
 ): EventPoolInstruction {
   const data = "data" in instruction ? instruction.data : instruction;
+  if (
+    containsBytes(
+      data,
+      fixEncoderSize(getBytesEncoder(), 8).encode(
+        new Uint8Array([209, 253, 4, 217, 250, 241, 207, 50]),
+      ),
+      0,
+    )
+  ) {
+    return EventPoolInstruction.CheckIn;
+  }
   if (
     containsBytes(
       data,
@@ -172,6 +186,9 @@ export type ParsedEventPoolInstruction<
   TProgram extends string = "E4SJunPXu5ZyoiSpz9Nk4jUAQWjj7qif6fTBDjR1Ping",
 > =
   | ({
+      instructionType: EventPoolInstruction.CheckIn;
+    } & ParsedCheckInInstruction<TProgram>)
+  | ({
       instructionType: EventPoolInstruction.Claim;
     } & ParsedClaimInstruction<TProgram>)
   | ({
@@ -198,6 +215,13 @@ export function parseEventPoolInstruction<TProgram extends string>(
 ): ParsedEventPoolInstruction<TProgram> {
   const instructionType = identifyEventPoolInstruction(instruction);
   switch (instructionType) {
+    case EventPoolInstruction.CheckIn: {
+      assertIsInstructionWithAccounts(instruction);
+      return {
+        instructionType: EventPoolInstruction.CheckIn,
+        ...parseCheckInInstruction(instruction),
+      };
+    }
     case EventPoolInstruction.Claim: {
       assertIsInstructionWithAccounts(instruction);
       return {
