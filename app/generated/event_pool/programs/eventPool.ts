@@ -17,19 +17,23 @@ import {
   type ReadonlyUint8Array,
 } from "@solana/kit";
 import {
+  parseCancelEventInstruction,
   parseCheckInInstruction,
   parseClaimInstruction,
   parseCreateEventInstruction,
   parseEndEventInstruction,
   parseJoinEventInstruction,
+  parseRefundInstruction,
   parseRotateTicketKeyInstruction,
   parseSetGateInstruction,
   parseWithdrawHostInstruction,
+  type ParsedCancelEventInstruction,
   type ParsedCheckInInstruction,
   type ParsedClaimInstruction,
   type ParsedCreateEventInstruction,
   type ParsedEndEventInstruction,
   type ParsedJoinEventInstruction,
+  type ParsedRefundInstruction,
   type ParsedRotateTicketKeyInstruction,
   type ParsedSetGateInstruction,
   type ParsedWithdrawHostInstruction,
@@ -75,11 +79,13 @@ export function identifyEventPoolAccount(
 }
 
 export enum EventPoolInstruction {
+  CancelEvent,
   CheckIn,
   Claim,
   CreateEvent,
   EndEvent,
   JoinEvent,
+  Refund,
   RotateTicketKey,
   SetGate,
   WithdrawHost,
@@ -89,6 +95,17 @@ export function identifyEventPoolInstruction(
   instruction: { data: ReadonlyUint8Array } | ReadonlyUint8Array,
 ): EventPoolInstruction {
   const data = "data" in instruction ? instruction.data : instruction;
+  if (
+    containsBytes(
+      data,
+      fixEncoderSize(getBytesEncoder(), 8).encode(
+        new Uint8Array([55, 143, 36, 45, 59, 241, 89, 119]),
+      ),
+      0,
+    )
+  ) {
+    return EventPoolInstruction.CancelEvent;
+  }
   if (
     containsBytes(
       data,
@@ -148,6 +165,17 @@ export function identifyEventPoolInstruction(
     containsBytes(
       data,
       fixEncoderSize(getBytesEncoder(), 8).encode(
+        new Uint8Array([2, 96, 183, 251, 63, 208, 46, 46]),
+      ),
+      0,
+    )
+  ) {
+    return EventPoolInstruction.Refund;
+  }
+  if (
+    containsBytes(
+      data,
+      fixEncoderSize(getBytesEncoder(), 8).encode(
         new Uint8Array([0, 197, 73, 196, 233, 18, 84, 77]),
       ),
       0,
@@ -186,6 +214,9 @@ export type ParsedEventPoolInstruction<
   TProgram extends string = "E4SJunPXu5ZyoiSpz9Nk4jUAQWjj7qif6fTBDjR1Ping",
 > =
   | ({
+      instructionType: EventPoolInstruction.CancelEvent;
+    } & ParsedCancelEventInstruction<TProgram>)
+  | ({
       instructionType: EventPoolInstruction.CheckIn;
     } & ParsedCheckInInstruction<TProgram>)
   | ({
@@ -201,6 +232,9 @@ export type ParsedEventPoolInstruction<
       instructionType: EventPoolInstruction.JoinEvent;
     } & ParsedJoinEventInstruction<TProgram>)
   | ({
+      instructionType: EventPoolInstruction.Refund;
+    } & ParsedRefundInstruction<TProgram>)
+  | ({
       instructionType: EventPoolInstruction.RotateTicketKey;
     } & ParsedRotateTicketKeyInstruction<TProgram>)
   | ({
@@ -215,6 +249,13 @@ export function parseEventPoolInstruction<TProgram extends string>(
 ): ParsedEventPoolInstruction<TProgram> {
   const instructionType = identifyEventPoolInstruction(instruction);
   switch (instructionType) {
+    case EventPoolInstruction.CancelEvent: {
+      assertIsInstructionWithAccounts(instruction);
+      return {
+        instructionType: EventPoolInstruction.CancelEvent,
+        ...parseCancelEventInstruction(instruction),
+      };
+    }
     case EventPoolInstruction.CheckIn: {
       assertIsInstructionWithAccounts(instruction);
       return {
@@ -248,6 +289,13 @@ export function parseEventPoolInstruction<TProgram extends string>(
       return {
         instructionType: EventPoolInstruction.JoinEvent,
         ...parseJoinEventInstruction(instruction),
+      };
+    }
+    case EventPoolInstruction.Refund: {
+      assertIsInstructionWithAccounts(instruction);
+      return {
+        instructionType: EventPoolInstruction.Refund,
+        ...parseRefundInstruction(instruction),
       };
     }
     case EventPoolInstruction.RotateTicketKey: {

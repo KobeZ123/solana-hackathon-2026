@@ -346,6 +346,35 @@ pub fn claim_ix(member: &Pubkey, event: &Pubkey) -> Instruction {
     }
 }
 
+pub fn cancel_event_ix(host: &Pubkey, event: &Pubkey) -> Instruction {
+    Instruction {
+        program_id: PROGRAM_ID,
+        accounts: crate::accounts::CancelEvent {
+            host: *host,
+            event: *event,
+        }
+        .to_account_metas(None),
+        data: crate::instruction::CancelEvent {}.data(),
+    }
+}
+
+pub fn refund_ix(member: &Pubkey, event: &Pubkey) -> Instruction {
+    let (vault, _) = vault_pda(event);
+    let (ticket, _) = ticket_pda(event, member);
+    Instruction {
+        program_id: PROGRAM_ID,
+        accounts: crate::accounts::Refund {
+            member: *member,
+            event: *event,
+            ticket,
+            vault,
+            system_program: system_program::ID,
+        }
+        .to_account_metas(None),
+        data: crate::instruction::Refund {}.data(),
+    }
+}
+
 pub fn withdraw_host_ix(host: &Pubkey, event: &Pubkey) -> Instruction {
     let (vault, _) = vault_pda(event);
     Instruction {

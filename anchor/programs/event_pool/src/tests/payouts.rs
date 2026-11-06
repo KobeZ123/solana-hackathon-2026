@@ -1,11 +1,9 @@
 //! T13: end_event, claim, withdraw_host.
 //!
-//! Joined / checked-in state is fabricated via `support_state` until `join_event` / `check_in`
-//! are used here (see PR notes).
+//! Full path join -> check_in -> end_event -> claim -> withdraw_host with real instructions.
 use solana_sdk::{pubkey::Pubkey, signature::Keypair, signer::Signer};
 
 use super::common::*;
-use super::support_state::*;
 use crate::errors::EventPoolError;
 use crate::state::EventStatus;
 
@@ -27,13 +25,15 @@ fn scenario(fee: u64, joined: usize, checked_in: usize, payout_bps: u16) -> (Tes
     };
     let event = create_event_with(&mut env, &host, &params);
     let mut members = vec![];
-    for i in 0..joined {
-        let m = env.funded(1);
-        fake_join(&mut env, &event, &m.pubkey());
-        if i < checked_in {
-            fake_check_in(&mut env, &event, &m.pubkey());
-        }
+    for _ in 0..joined {
+        let m = env.funded(3);
+        join_default(&mut env, &m, &event);
         members.push(m);
+    }
+    env.warp_to(params.start_ts);
+    for m in members.iter().take(checked_in) {
+        let ix = check_in_ix(&host.pubkey(), &event, &m.pubkey());
+        assert_ok(&env.send(&[ix], &payer, &[&host]));
     }
     (
         env,
