@@ -13,22 +13,22 @@ Source of truth for work breakdown. Each `## Txx` section is mirrored as a GitHu
 |---|---|---|---|---|---|---|
 | T00 | Scaffold template + dev env scripts | 0 | - | - | #1 | done |
 | T01 | Docs, tickets, issues, handoff | 0 | - | - | - | done |
-| T10 | Program skeleton, `create_event`, `set_gate` | 1 | T00 | #2 | - | todo |
-| T11 | `join_event`, `rotate_ticket_key` | 1b | T10 | #3 | - | todo |
-| T12 | `check_in` | 1b | T10 | #4 | - | todo |
-| T13 | `end_event`, `claim`, `withdraw_host` | 1b | T10 | #5 | - | todo |
-| T14 | `cancel_event`, `refund` | 1b | T10 | #6 | - | todo |
+| T10 | Program skeleton, `create_event`, `set_gate` | 1 | T00 | #2 | #28 | done |
+| T11 | `join_event`, `rotate_ticket_key` | 1b | T10 | #3 | #32 | done |
+| T12 | `check_in` | 1b | T10 | #4 | #33 | done |
+| T13 | `end_event`, `claim`, `withdraw_host` | 1b | T10 | #5 | #31 | done |
+| T14 | `cancel_event`, `refund` | 1b | T10 | #6 | #34 | done |
 | T15 | Localnet end-to-end lifecycle script | 2 | T11-T14 | #7 | - | todo |
-| T20 | Web shell: replace vault UI, nav, route stubs | 1 | T00 | #8 | - | todo |
-| T21 | Web libs: QR crypto, ticket keys, api-client/auth | 1 | T00 | #9 | - | todo |
-| T22 | Create-event page | 2 | T10, T20, T30 | #10 | - | todo |
-| T23 | Event page: join + gated details | 2 | T11, T20, T21, T31 | #11 | - | todo |
-| T24 | Ticket page: rotating QR | 2 | T21, T23 | #12 | - | todo |
+| T20 | Web shell: replace vault UI, nav, route stubs | 1 | T00 | #8 | #29 | done |
+| T21 | Web libs: QR crypto, ticket keys, api-client/auth | 1 | T00 | #9 | #26 | done |
+| T22 | Create-event page | 2 | T10, T20, T30 | #10 | #30 | done |
+| T23 | Event page: join + gated details | 2 | T11, T20, T21, T31 | #11 | #35 | done |
+| T24 | Ticket page: rotating QR | 2 | T21, T23 | #12 | #36 | done |
 | T25 | Scanner page (gate key, verify, check-in) | 2 | T12, T21 | #13 | - | todo |
 | T26 | Host dashboard | 2 | T13, T14, T20 | #14 | - | todo |
 | T27 | Claim and refund UI | 2 | T13, T14, T20 | #15 | - | todo |
-| T30 | API: store abstraction + wallet auth | 1 | T00 | #16 | - | todo |
-| T31 | API: events endpoints + ticket gating | 1 | T30 | #17 | - | todo |
+| T30 | API: store abstraction + wallet auth | 1 | T00 | #16 | #25 | done |
+| T31 | API: events endpoints + ticket gating | 1 | T30 | #17 | #27 | done |
 | T40 | Stretch A program: vendors + sponsorship proposals | 3 | T13 | #18 | - | todo |
 | T41 | Stretch A program: delivery + settlement | 3 | T40 | #19 | - | todo |
 | T42 | Stretch A UI: vendor flow | 3 | T41, T25 | #20 | - | todo |

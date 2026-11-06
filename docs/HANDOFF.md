@@ -1,7 +1,7 @@
 # Handoff
 
 Living status document. Read this first when you come back. Updated by the orchestrating session after each wave.
-Last updated: 2026-11-06 (start of build).
+Last updated: 2026-11-06 (mid-build, orchestrator checkpoint 1).
 
 ## TL;DR
 - Idea: event hosting where entry fees fund the event, QR tickets verified on Solana, attendees airdropped the pool share for showing up.
@@ -10,8 +10,12 @@ Last updated: 2026-11-06 (start of build).
 - Program ID: `E4SJunPXu5ZyoiSpz9Nk4jUAQWjj7qif6fTBDjR1Ping` (keypair outside the repo at `/Volumes/KobeT9/devhome/keys/event_pool-keypair.json`; **back this file up**, it is the program's upgrade authority key for the devnet deploy).
 
 ## Current state
-Wave 0 done: template scaffolded and merged (#1), tickets written, issues created.
-Nothing else landed yet. See the status table in TICKETS.md for live status.
+Landed on main (all verified by the orchestrator re-running tests on main, see below):
+- Program `event_pool`: create_event, set_gate, join_event, rotate_ticket_key, check_in, end_event, claim, withdraw_host, cancel_event, refund (PRs #28, #31-#34). `cargo test`: 75 passing (LiteSVM).
+- API: store abstraction (Supabase or JSON file), wallet sign-in + JWT, events endpoints with ticket gating (#25, #27). vitest suite passing.
+- Web: shell/nav (#29), QR crypto + components + api-client (#26), create-event page (#30), event page with join and gated details (#35), ticket page with rotating QR (#36).
+In flight: T15 localnet e2e script, T25-T27 (scanner, host dashboard, claim/refund), stretch A program (T40/T41), stretch B (T50/T51). Not started: T42 (vendor UI), T60 (deploy), T61 (README).
+Live status: table in TICKETS.md and the issue list.
 
 ## Machine/environment notes (important)
 - The internal disk of this Mac was ~100% full (about 1 GB free). Toolchains and caches are redirected to `/Volumes/KobeT9/devhome` via `scripts/env.sh` and `scripts/with-devhome.sh`. Use them for every anchor/cargo command. If you free up disk space you can drop the redirection.
