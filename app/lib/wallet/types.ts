@@ -20,6 +20,8 @@ export type WalletSession = {
     transaction: Uint8Array,
     chain: string
   ) => Promise<Uint8Array>;
+  /** Sign an arbitrary message (wallet-standard `solana:signMessage`). Returns the detached signature. */
+  signMessage?: (message: Uint8Array) => Promise<Uint8Array>;
   sendTransaction?: (
     transaction: Uint8Array,
     chain: string
