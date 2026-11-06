@@ -13,5 +13,7 @@ for f in "$HOME"/.cargo/bin/*; do [ -e "$DEV_HOME/.cargo/bin/$(basename "$f")" ]
 export AVM_HOME="${AVM_HOME:-$HOME/.avm}"
 export RUSTUP_HOME="$DEV_HOME/.rustup"
 export CARGO_HOME="$DEV_HOME/.cargo"
+mkdir -p "$DEV_HOME/tmp"
+export TMPDIR="$DEV_HOME/tmp"
 export npm_config_cache="$DEV_HOME/.npm"
 export PATH="$CARGO_HOME/bin:$HOME/.local/share/solana/install/active_release/bin:$HOME/.cargo/bin:$HOME/.avm/bin:$PATH"
