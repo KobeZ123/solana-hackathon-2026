@@ -20,11 +20,15 @@ import {
   parseClaimInstruction,
   parseCreateEventInstruction,
   parseEndEventInstruction,
+  parseJoinEventInstruction,
+  parseRotateTicketKeyInstruction,
   parseSetGateInstruction,
   parseWithdrawHostInstruction,
   type ParsedClaimInstruction,
   type ParsedCreateEventInstruction,
   type ParsedEndEventInstruction,
+  type ParsedJoinEventInstruction,
+  type ParsedRotateTicketKeyInstruction,
   type ParsedSetGateInstruction,
   type ParsedWithdrawHostInstruction,
 } from "../instructions";
@@ -72,6 +76,8 @@ export enum EventPoolInstruction {
   Claim,
   CreateEvent,
   EndEvent,
+  JoinEvent,
+  RotateTicketKey,
   SetGate,
   WithdrawHost,
 }
@@ -117,6 +123,28 @@ export function identifyEventPoolInstruction(
     containsBytes(
       data,
       fixEncoderSize(getBytesEncoder(), 8).encode(
+        new Uint8Array([10, 93, 234, 137, 237, 194, 224, 0]),
+      ),
+      0,
+    )
+  ) {
+    return EventPoolInstruction.JoinEvent;
+  }
+  if (
+    containsBytes(
+      data,
+      fixEncoderSize(getBytesEncoder(), 8).encode(
+        new Uint8Array([0, 197, 73, 196, 233, 18, 84, 77]),
+      ),
+      0,
+    )
+  ) {
+    return EventPoolInstruction.RotateTicketKey;
+  }
+  if (
+    containsBytes(
+      data,
+      fixEncoderSize(getBytesEncoder(), 8).encode(
         new Uint8Array([160, 18, 221, 241, 119, 196, 121, 6]),
       ),
       0,
@@ -153,6 +181,12 @@ export type ParsedEventPoolInstruction<
       instructionType: EventPoolInstruction.EndEvent;
     } & ParsedEndEventInstruction<TProgram>)
   | ({
+      instructionType: EventPoolInstruction.JoinEvent;
+    } & ParsedJoinEventInstruction<TProgram>)
+  | ({
+      instructionType: EventPoolInstruction.RotateTicketKey;
+    } & ParsedRotateTicketKeyInstruction<TProgram>)
+  | ({
       instructionType: EventPoolInstruction.SetGate;
     } & ParsedSetGateInstruction<TProgram>)
   | ({
@@ -183,6 +217,20 @@ export function parseEventPoolInstruction<TProgram extends string>(
       return {
         instructionType: EventPoolInstruction.EndEvent,
         ...parseEndEventInstruction(instruction),
+      };
+    }
+    case EventPoolInstruction.JoinEvent: {
+      assertIsInstructionWithAccounts(instruction);
+      return {
+        instructionType: EventPoolInstruction.JoinEvent,
+        ...parseJoinEventInstruction(instruction),
+      };
+    }
+    case EventPoolInstruction.RotateTicketKey: {
+      assertIsInstructionWithAccounts(instruction);
+      return {
+        instructionType: EventPoolInstruction.RotateTicketKey,
+        ...parseRotateTicketKeyInstruction(instruction),
       };
     }
     case EventPoolInstruction.SetGate: {

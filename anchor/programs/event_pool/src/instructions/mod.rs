@@ -2,9 +2,13 @@
 
 // One module + one glob re-export per instruction (later tickets add one line of each).
 pub mod create_event;
+pub mod join_event;
+pub mod rotate_ticket_key;
 pub mod set_gate;
 
 pub use create_event::*;
+pub use join_event::*;
+pub use rotate_ticket_key::*;
 pub use set_gate::*;
 pub mod claim;
 pub mod end_event;

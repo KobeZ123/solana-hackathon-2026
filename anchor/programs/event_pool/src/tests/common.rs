@@ -263,6 +263,40 @@ pub fn set_gate_ix(host: &Pubkey, event: &Pubkey, gate: &Pubkey) -> Instruction 
     }
 }
 
+pub fn join_event_ix(member: &Pubkey, event: &Pubkey, ticket_key: &Pubkey) -> Instruction {
+    let (vault, _) = vault_pda(event);
+    let (ticket, _) = ticket_pda(event, member);
+    Instruction {
+        program_id: PROGRAM_ID,
+        accounts: crate::accounts::JoinEvent {
+            member: *member,
+            event: *event,
+            vault,
+            ticket,
+            system_program: system_program::ID,
+        }
+        .to_account_metas(None),
+        data: crate::instruction::JoinEvent {
+            ticket_key: *ticket_key,
+        }
+        .data(),
+    }
+}
+
+pub fn rotate_ticket_key_ix(member: &Pubkey, event: &Pubkey, new_key: &Pubkey) -> Instruction {
+    let (ticket, _) = ticket_pda(event, member);
+    Instruction {
+        program_id: PROGRAM_ID,
+        accounts: crate::accounts::RotateTicketKey {
+            member: *member,
+            event: *event,
+            ticket,
+        }
+        .to_account_metas(None),
+        data: crate::instruction::RotateTicketKey { new_key: *new_key }.data(),
+    }
+}
+
 // ---------------------------------------------------------------------------------------------
 // Scenario helpers
 // ---------------------------------------------------------------------------------------------
@@ -325,4 +359,50 @@ pub fn withdraw_host_ix(host: &Pubkey, event: &Pubkey) -> Instruction {
         .to_account_metas(None),
         data: crate::instruction::WithdrawHost {}.data(),
     }
+}
+
+/// `member` joins `event` with `ticket_key` (asserts success); returns the Ticket PDA.
+pub fn join_event_with_key(
+    env: &mut TestEnv,
+    member: &Keypair,
+    event: &Pubkey,
+    ticket_key: &Pubkey,
+) -> Pubkey {
+    let res = env.send(
+        &[join_event_ix(&member.pubkey(), event, ticket_key)],
+        member,
+        &[],
+    );
+    assert_ok(&res);
+    ticket_pda(event, &member.pubkey()).0
+}
+
+/// `member` joins `event` with a fresh random ticket key (asserts success); returns the Ticket PDA.
+pub fn join_default(env: &mut TestEnv, member: &Keypair, event: &Pubkey) -> Pubkey {
+    join_event_with_key(env, member, event, &Pubkey::new_unique())
+}
+
+/// Rewrite the on-chain Event account with `f` applied (to reach states not yet reachable
+/// through instructions).
+pub fn mutate_event(env: &mut TestEnv, event: &Pubkey, f: impl FnOnce(&mut Event)) {
+    use anchor_lang::AccountSerialize;
+    let mut acc = env.svm.get_account(event).unwrap();
+    let mut ev = Event::try_deserialize(&mut acc.data.as_slice()).unwrap();
+    f(&mut ev);
+    let mut data = Vec::new();
+    ev.try_serialize(&mut data).unwrap();
+    acc.data[..data.len()].copy_from_slice(&data);
+    env.svm.set_account(*event, acc).unwrap();
+}
+
+/// Rewrite the on-chain Ticket account with `f` applied.
+pub fn mutate_ticket(env: &mut TestEnv, ticket: &Pubkey, f: impl FnOnce(&mut Ticket)) {
+    use anchor_lang::AccountSerialize;
+    let mut acc = env.svm.get_account(ticket).unwrap();
+    let mut t = Ticket::try_deserialize(&mut acc.data.as_slice()).unwrap();
+    f(&mut t);
+    let mut data = Vec::new();
+    t.try_serialize(&mut data).unwrap();
+    acc.data[..data.len()].copy_from_slice(&data);
+    env.svm.set_account(*ticket, acc).unwrap();
 }

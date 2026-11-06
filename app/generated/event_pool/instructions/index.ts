@@ -9,5 +9,7 @@
 export * from "./claim";
 export * from "./createEvent";
 export * from "./endEvent";
+export * from "./joinEvent";
+export * from "./rotateTicketKey";
 export * from "./setGate";
 export * from "./withdrawHost";
