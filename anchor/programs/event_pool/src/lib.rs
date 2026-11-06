@@ -70,4 +70,12 @@ pub mod event_pool {
     pub fn check_in(ctx: Context<CheckIn>) -> Result<()> {
         instructions::check_in::handler(ctx)
     }
+
+    pub fn cancel_event(ctx: Context<CancelEvent>) -> Result<()> {
+        instructions::cancel_event::handler(ctx)
+    }
+
+    pub fn refund(ctx: Context<Refund>) -> Result<()> {
+        instructions::refund::handler(ctx)
+    }
 }

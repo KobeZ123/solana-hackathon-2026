@@ -17,20 +17,18 @@ import {
   type ReadonlyUint8Array,
 } from "@solana/kit";
 import {
-  parseCheckInInstruction,
+  parseCancelEventInstruction,
   parseClaimInstruction,
   parseCreateEventInstruction,
   parseEndEventInstruction,
-  parseJoinEventInstruction,
-  parseRotateTicketKeyInstruction,
+  parseRefundInstruction,
   parseSetGateInstruction,
   parseWithdrawHostInstruction,
-  type ParsedCheckInInstruction,
+  type ParsedCancelEventInstruction,
   type ParsedClaimInstruction,
   type ParsedCreateEventInstruction,
   type ParsedEndEventInstruction,
-  type ParsedJoinEventInstruction,
-  type ParsedRotateTicketKeyInstruction,
+  type ParsedRefundInstruction,
   type ParsedSetGateInstruction,
   type ParsedWithdrawHostInstruction,
 } from "../instructions";
@@ -75,12 +73,11 @@ export function identifyEventPoolAccount(
 }
 
 export enum EventPoolInstruction {
-  CheckIn,
+  CancelEvent,
   Claim,
   CreateEvent,
   EndEvent,
-  JoinEvent,
-  RotateTicketKey,
+  Refund,
   SetGate,
   WithdrawHost,
 }
@@ -93,12 +90,12 @@ export function identifyEventPoolInstruction(
     containsBytes(
       data,
       fixEncoderSize(getBytesEncoder(), 8).encode(
-        new Uint8Array([209, 253, 4, 217, 250, 241, 207, 50]),
+        new Uint8Array([55, 143, 36, 45, 59, 241, 89, 119]),
       ),
       0,
     )
   ) {
-    return EventPoolInstruction.CheckIn;
+    return EventPoolInstruction.CancelEvent;
   }
   if (
     containsBytes(
@@ -137,23 +134,12 @@ export function identifyEventPoolInstruction(
     containsBytes(
       data,
       fixEncoderSize(getBytesEncoder(), 8).encode(
-        new Uint8Array([10, 93, 234, 137, 237, 194, 224, 0]),
+        new Uint8Array([2, 96, 183, 251, 63, 208, 46, 46]),
       ),
       0,
     )
   ) {
-    return EventPoolInstruction.JoinEvent;
-  }
-  if (
-    containsBytes(
-      data,
-      fixEncoderSize(getBytesEncoder(), 8).encode(
-        new Uint8Array([0, 197, 73, 196, 233, 18, 84, 77]),
-      ),
-      0,
-    )
-  ) {
-    return EventPoolInstruction.RotateTicketKey;
+    return EventPoolInstruction.Refund;
   }
   if (
     containsBytes(
@@ -186,8 +172,8 @@ export type ParsedEventPoolInstruction<
   TProgram extends string = "E4SJunPXu5ZyoiSpz9Nk4jUAQWjj7qif6fTBDjR1Ping",
 > =
   | ({
-      instructionType: EventPoolInstruction.CheckIn;
-    } & ParsedCheckInInstruction<TProgram>)
+      instructionType: EventPoolInstruction.CancelEvent;
+    } & ParsedCancelEventInstruction<TProgram>)
   | ({
       instructionType: EventPoolInstruction.Claim;
     } & ParsedClaimInstruction<TProgram>)
@@ -198,11 +184,8 @@ export type ParsedEventPoolInstruction<
       instructionType: EventPoolInstruction.EndEvent;
     } & ParsedEndEventInstruction<TProgram>)
   | ({
-      instructionType: EventPoolInstruction.JoinEvent;
-    } & ParsedJoinEventInstruction<TProgram>)
-  | ({
-      instructionType: EventPoolInstruction.RotateTicketKey;
-    } & ParsedRotateTicketKeyInstruction<TProgram>)
+      instructionType: EventPoolInstruction.Refund;
+    } & ParsedRefundInstruction<TProgram>)
   | ({
       instructionType: EventPoolInstruction.SetGate;
     } & ParsedSetGateInstruction<TProgram>)
@@ -215,11 +198,11 @@ export function parseEventPoolInstruction<TProgram extends string>(
 ): ParsedEventPoolInstruction<TProgram> {
   const instructionType = identifyEventPoolInstruction(instruction);
   switch (instructionType) {
-    case EventPoolInstruction.CheckIn: {
+    case EventPoolInstruction.CancelEvent: {
       assertIsInstructionWithAccounts(instruction);
       return {
-        instructionType: EventPoolInstruction.CheckIn,
-        ...parseCheckInInstruction(instruction),
+        instructionType: EventPoolInstruction.CancelEvent,
+        ...parseCancelEventInstruction(instruction),
       };
     }
     case EventPoolInstruction.Claim: {
@@ -243,18 +226,11 @@ export function parseEventPoolInstruction<TProgram extends string>(
         ...parseEndEventInstruction(instruction),
       };
     }
-    case EventPoolInstruction.JoinEvent: {
+    case EventPoolInstruction.Refund: {
       assertIsInstructionWithAccounts(instruction);
       return {
-        instructionType: EventPoolInstruction.JoinEvent,
-        ...parseJoinEventInstruction(instruction),
-      };
-    }
-    case EventPoolInstruction.RotateTicketKey: {
-      assertIsInstructionWithAccounts(instruction);
-      return {
-        instructionType: EventPoolInstruction.RotateTicketKey,
-        ...parseRotateTicketKeyInstruction(instruction),
+        instructionType: EventPoolInstruction.Refund,
+        ...parseRefundInstruction(instruction),
       };
     }
     case EventPoolInstruction.SetGate: {

@@ -6,11 +6,10 @@
  * @see https://github.com/codama-idl/codama
  */
 
-export * from "./checkIn";
+export * from "./cancelEvent";
 export * from "./claim";
 export * from "./createEvent";
 export * from "./endEvent";
-export * from "./joinEvent";
-export * from "./rotateTicketKey";
+export * from "./refund";
 export * from "./setGate";
 export * from "./withdrawHost";
