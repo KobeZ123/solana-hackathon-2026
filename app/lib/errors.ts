@@ -3,16 +3,20 @@ import {
   SOLANA_ERROR__INSTRUCTION_ERROR__CUSTOM,
 } from "@solana/kit";
 import {
-  getVaultErrorMessage,
-  VAULT_ERROR__VAULT_ALREADY_EXISTS,
-  VAULT_ERROR__INVALID_AMOUNT,
-  type VaultError,
-} from "../generated/vault";
+  getEventPoolErrorMessage,
+  EVENT_POOL_ERROR__INVALID_TIME_RANGE,
+  EVENT_POOL_ERROR__MATH_OVERFLOW,
+  type EventPoolError,
+} from "../generated/event_pool";
 
-const VAULT_ERROR_CODES: Record<number, VaultError> = {
-  [VAULT_ERROR__VAULT_ALREADY_EXISTS]: VAULT_ERROR__VAULT_ALREADY_EXISTS,
-  [VAULT_ERROR__INVALID_AMOUNT]: VAULT_ERROR__INVALID_AMOUNT,
-};
+// Program error codes are contiguous, first and last variant bound the range.
+// Stretch-A errors appended later extend the range: update the upper bound then.
+function isEventPoolErrorCode(code: number): code is EventPoolError {
+  return (
+    code >= EVENT_POOL_ERROR__INVALID_TIME_RANGE &&
+    code <= EVENT_POOL_ERROR__MATH_OVERFLOW
+  );
+}
 
 export function parseTransactionError(err: unknown): string {
   // Wallet rejection (comes from wallet-standard, not a SolanaError)
@@ -25,9 +29,9 @@ export function parseTransactionError(err: unknown): string {
     isSolanaError(err, SOLANA_ERROR__INSTRUCTION_ERROR__CUSTOM) &&
     typeof err.context?.code === "number"
   ) {
-    const vaultError = VAULT_ERROR_CODES[err.context.code];
-    if (vaultError !== undefined) {
-      return getVaultErrorMessage(vaultError);
+    const code = err.context.code;
+    if (isEventPoolErrorCode(code)) {
+      return getEventPoolErrorMessage(code);
     }
   }
 

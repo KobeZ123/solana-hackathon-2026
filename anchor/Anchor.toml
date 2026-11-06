@@ -4,8 +4,11 @@
 resolution = true
 skip-lint = false
 
+[programs.localnet]
+event_pool = "E4SJunPXu5ZyoiSpz9Nk4jUAQWjj7qif6fTBDjR1Ping"
+
 [programs.devnet]
-vault = "7qrFugcNjGtUxaVzBwtBGYBmGQxAUs9prTwwNEdYPkXb"
+event_pool = "E4SJunPXu5ZyoiSpz9Nk4jUAQWjj7qif6fTBDjR1Ping"
 
 [provider]
 cluster = "devnet"
