@@ -46,4 +46,16 @@ pub mod event_pool {
     pub fn set_gate(ctx: Context<SetGate>, gate: Pubkey) -> Result<()> {
         instructions::set_gate::handler(ctx, gate)
     }
+
+    pub fn end_event(ctx: Context<EndEvent>) -> Result<()> {
+        instructions::end_event::handler(ctx)
+    }
+
+    pub fn claim(ctx: Context<Claim>) -> Result<()> {
+        instructions::claim::handler(ctx)
+    }
+
+    pub fn withdraw_host(ctx: Context<WithdrawHost>) -> Result<()> {
+        instructions::withdraw_host::handler(ctx)
+    }
 }

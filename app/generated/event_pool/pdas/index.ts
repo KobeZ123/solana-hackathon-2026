@@ -7,4 +7,5 @@
  */
 
 export * from "./event";
+export * from "./ticket";
 export * from "./vault";

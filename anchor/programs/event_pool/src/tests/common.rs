@@ -278,3 +278,51 @@ pub fn create_event_with(env: &mut TestEnv, host: &Keypair, params: &CreateEvent
     assert_ok(&res);
     event_pda(&host.pubkey(), params.event_id).0
 }
+
+// --- T13/T14 instruction builders ---------------------------------------------------------
+
+pub fn end_event_ix(host: &Pubkey, event: &Pubkey) -> Instruction {
+    let (vault, _) = vault_pda(event);
+    Instruction {
+        program_id: PROGRAM_ID,
+        accounts: crate::accounts::EndEvent {
+            host: *host,
+            event: *event,
+            vault,
+        }
+        .to_account_metas(None),
+        data: crate::instruction::EndEvent {}.data(),
+    }
+}
+
+pub fn claim_ix(member: &Pubkey, event: &Pubkey) -> Instruction {
+    let (vault, _) = vault_pda(event);
+    let (ticket, _) = ticket_pda(event, member);
+    Instruction {
+        program_id: PROGRAM_ID,
+        accounts: crate::accounts::Claim {
+            member: *member,
+            event: *event,
+            ticket,
+            vault,
+            system_program: system_program::ID,
+        }
+        .to_account_metas(None),
+        data: crate::instruction::Claim {}.data(),
+    }
+}
+
+pub fn withdraw_host_ix(host: &Pubkey, event: &Pubkey) -> Instruction {
+    let (vault, _) = vault_pda(event);
+    Instruction {
+        program_id: PROGRAM_ID,
+        accounts: crate::accounts::WithdrawHost {
+            host: *host,
+            event: *event,
+            vault,
+            system_program: system_program::ID,
+        }
+        .to_account_metas(None),
+        data: crate::instruction::WithdrawHost {}.data(),
+    }
+}

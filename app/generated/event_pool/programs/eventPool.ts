@@ -17,10 +17,16 @@ import {
   type ReadonlyUint8Array,
 } from "@solana/kit";
 import {
+  parseClaimInstruction,
   parseCreateEventInstruction,
+  parseEndEventInstruction,
   parseSetGateInstruction,
+  parseWithdrawHostInstruction,
+  type ParsedClaimInstruction,
   type ParsedCreateEventInstruction,
+  type ParsedEndEventInstruction,
   type ParsedSetGateInstruction,
+  type ParsedWithdrawHostInstruction,
 } from "../instructions";
 
 export const EVENT_POOL_PROGRAM_ADDRESS =
@@ -28,6 +34,7 @@ export const EVENT_POOL_PROGRAM_ADDRESS =
 
 export enum EventPoolAccount {
   Event,
+  Ticket,
 }
 
 export function identifyEventPoolAccount(
@@ -45,20 +52,45 @@ export function identifyEventPoolAccount(
   ) {
     return EventPoolAccount.Event;
   }
+  if (
+    containsBytes(
+      data,
+      fixEncoderSize(getBytesEncoder(), 8).encode(
+        new Uint8Array([41, 228, 24, 165, 78, 90, 235, 200]),
+      ),
+      0,
+    )
+  ) {
+    return EventPoolAccount.Ticket;
+  }
   throw new Error(
     "The provided account could not be identified as a eventPool account.",
   );
 }
 
 export enum EventPoolInstruction {
+  Claim,
   CreateEvent,
+  EndEvent,
   SetGate,
+  WithdrawHost,
 }
 
 export function identifyEventPoolInstruction(
   instruction: { data: ReadonlyUint8Array } | ReadonlyUint8Array,
 ): EventPoolInstruction {
   const data = "data" in instruction ? instruction.data : instruction;
+  if (
+    containsBytes(
+      data,
+      fixEncoderSize(getBytesEncoder(), 8).encode(
+        new Uint8Array([62, 198, 214, 193, 213, 159, 108, 210]),
+      ),
+      0,
+    )
+  ) {
+    return EventPoolInstruction.Claim;
+  }
   if (
     containsBytes(
       data,
@@ -74,12 +106,34 @@ export function identifyEventPoolInstruction(
     containsBytes(
       data,
       fixEncoderSize(getBytesEncoder(), 8).encode(
+        new Uint8Array([210, 72, 122, 58, 113, 167, 161, 20]),
+      ),
+      0,
+    )
+  ) {
+    return EventPoolInstruction.EndEvent;
+  }
+  if (
+    containsBytes(
+      data,
+      fixEncoderSize(getBytesEncoder(), 8).encode(
         new Uint8Array([160, 18, 221, 241, 119, 196, 121, 6]),
       ),
       0,
     )
   ) {
     return EventPoolInstruction.SetGate;
+  }
+  if (
+    containsBytes(
+      data,
+      fixEncoderSize(getBytesEncoder(), 8).encode(
+        new Uint8Array([103, 247, 115, 166, 187, 165, 7, 18]),
+      ),
+      0,
+    )
+  ) {
+    return EventPoolInstruction.WithdrawHost;
   }
   throw new Error(
     "The provided instruction could not be identified as a eventPool instruction.",
@@ -90,17 +144,33 @@ export type ParsedEventPoolInstruction<
   TProgram extends string = "E4SJunPXu5ZyoiSpz9Nk4jUAQWjj7qif6fTBDjR1Ping",
 > =
   | ({
+      instructionType: EventPoolInstruction.Claim;
+    } & ParsedClaimInstruction<TProgram>)
+  | ({
       instructionType: EventPoolInstruction.CreateEvent;
     } & ParsedCreateEventInstruction<TProgram>)
   | ({
+      instructionType: EventPoolInstruction.EndEvent;
+    } & ParsedEndEventInstruction<TProgram>)
+  | ({
       instructionType: EventPoolInstruction.SetGate;
-    } & ParsedSetGateInstruction<TProgram>);
+    } & ParsedSetGateInstruction<TProgram>)
+  | ({
+      instructionType: EventPoolInstruction.WithdrawHost;
+    } & ParsedWithdrawHostInstruction<TProgram>);
 
 export function parseEventPoolInstruction<TProgram extends string>(
   instruction: Instruction<TProgram> & InstructionWithData<ReadonlyUint8Array>,
 ): ParsedEventPoolInstruction<TProgram> {
   const instructionType = identifyEventPoolInstruction(instruction);
   switch (instructionType) {
+    case EventPoolInstruction.Claim: {
+      assertIsInstructionWithAccounts(instruction);
+      return {
+        instructionType: EventPoolInstruction.Claim,
+        ...parseClaimInstruction(instruction),
+      };
+    }
     case EventPoolInstruction.CreateEvent: {
       assertIsInstructionWithAccounts(instruction);
       return {
@@ -108,11 +178,25 @@ export function parseEventPoolInstruction<TProgram extends string>(
         ...parseCreateEventInstruction(instruction),
       };
     }
+    case EventPoolInstruction.EndEvent: {
+      assertIsInstructionWithAccounts(instruction);
+      return {
+        instructionType: EventPoolInstruction.EndEvent,
+        ...parseEndEventInstruction(instruction),
+      };
+    }
     case EventPoolInstruction.SetGate: {
       assertIsInstructionWithAccounts(instruction);
       return {
         instructionType: EventPoolInstruction.SetGate,
         ...parseSetGateInstruction(instruction),
+      };
+    }
+    case EventPoolInstruction.WithdrawHost: {
+      assertIsInstructionWithAccounts(instruction);
+      return {
+        instructionType: EventPoolInstruction.WithdrawHost,
+        ...parseWithdrawHostInstruction(instruction),
       };
     }
     default:

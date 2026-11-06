@@ -6,3 +6,10 @@ pub mod set_gate;
 
 pub use create_event::*;
 pub use set_gate::*;
+pub mod claim;
+pub mod end_event;
+pub mod withdraw_host;
+
+pub use claim::*;
+pub use end_event::*;
+pub use withdraw_host::*;
