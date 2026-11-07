@@ -25,6 +25,7 @@ import {
   useTicket,
 } from "../../lib/event-pool";
 import { EventDetails } from "./event-details";
+import { ProposeSponsorship } from "./propose-sponsorship";
 
 /** Ticket account rent + a little for fees, on top of the entry fee. */
 const JOIN_OVERHEAD_LAMPORTS = 3_000_000n;
@@ -276,6 +277,10 @@ export function EventView({ pda }: { pda: string }) {
       </dl>
 
       {action}
+
+      {member && !isHost && (
+        <ProposeSponsorship pda={pda} event={event} vendor={member} />
+      )}
 
       {keyWarning && (
         <p

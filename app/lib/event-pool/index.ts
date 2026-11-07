@@ -15,3 +15,4 @@ export * from "./use-tickets";
 export * from "./vendor";
 export * from "./vendor-api";
 export * from "./vendor-hooks";
+export * from "./vendor-errors";
