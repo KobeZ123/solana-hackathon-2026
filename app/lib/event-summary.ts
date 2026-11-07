@@ -1,8 +1,11 @@
+import { parseSharedEvent, type SharedEventInfo } from "./network";
+
 /**
  * Tolerant parsing of `GET /api/events` for the home list. The exact response
  * shape is owned by T31; this accepts either a bare array or `{ events: [...] }`
  * and picks the fields the list needs, ignoring anything else.
  */
+
 export type EventListItem = {
   pda: string;
   title: string;
@@ -15,6 +18,8 @@ export type EventListItem = {
   /** Unix seconds. */
   startTs?: number;
   status?: string;
+  /** Feed only: the shared event connecting you to the host ("from your network"). */
+  via?: SharedEventInfo;
 };
 
 function str(v: unknown): string | undefined {
@@ -77,6 +82,7 @@ export function parseEventList(body: unknown): EventListItem[] {
       ),
       startTs: num(e.startTs ?? e.start_ts ?? chain.startTs ?? chain.start_ts),
       status: str(e.status) ?? str(chain.status),
+      via: parseSharedEvent(e.via) ?? undefined,
     });
   }
   return items;
