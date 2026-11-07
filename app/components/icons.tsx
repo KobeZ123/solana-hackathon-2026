@@ -76,3 +76,9 @@ export const ArrowLeftIcon = (p: SVGProps<SVGSVGElement>) => (
     <path d="M19 12H5M11 6l-6 6 6 6" />
   </svg>
 );
+
+export const VendorIcon = (p: SVGProps<SVGSVGElement>) => (
+  <svg {...base(p)}>
+    <path d="M3 7.5 12 3l9 4.5v9L12 21l-9-4.5v-9ZM3 7.5l9 4.5 9-4.5M12 12v9M7.5 5.25l9 4.5" />
+  </svg>
+);

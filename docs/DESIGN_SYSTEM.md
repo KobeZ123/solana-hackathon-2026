@@ -51,4 +51,4 @@ errors use `destructive`).
 
 ## Status
 
-Done: champagne tokens, Geist + serif wordmark, grid background, favicon, event details page. Remaining screens above keep their previous layouts with the new colors.
+Done: champagne tokens, Geist and serif wordmark, grid background, favicon, landing, event discovery, and event details. The illustrated localnet showcase includes Builder Breakfast, After Hours, and Design Review. See [SEED.md](./SEED.md) for the seed workflow.

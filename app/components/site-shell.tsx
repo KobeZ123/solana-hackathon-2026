@@ -9,7 +9,7 @@ import { ClusterSelect } from "./cluster-select";
 import { WalletButton } from "./wallet-button";
 
 export const NAV_ITEMS = [
-  { href: "/", label: "Events", match: (p: string) => p === "/" },
+  { href: "/#events", label: "Events", match: (p: string) => p === "/" },
   {
     href: "/events/new",
     label: "Create",
@@ -57,7 +57,7 @@ export function SiteShell({ children }: PropsWithChildren) {
             <div className="flex items-center gap-6">
               <Logo />
               <nav
-                className="hidden items-center gap-1 sm:flex"
+                className="hidden items-center gap-1 md:flex"
                 aria-label="Main"
               >
                 {NAV_ITEMS.map((item) => {
@@ -68,7 +68,9 @@ export function SiteShell({ children }: PropsWithChildren) {
                       href={item.href}
                       aria-current={active ? "page" : undefined}
                       className={`rounded-lg px-3 py-1.5 text-sm font-medium transition hover:bg-cream ${
-                        active ? "bg-cream text-foreground" : "text-muted"
+                        active
+                          ? "bg-cream text-foreground shadow-[inset_0_-1px_var(--accent-metal)]"
+                          : "text-muted"
                       }`}
                     >
                       {item.label}
@@ -85,13 +87,13 @@ export function SiteShell({ children }: PropsWithChildren) {
           </div>
         </header>
 
-        <main className="mx-auto w-full max-w-5xl flex-1 px-4 pb-28 pt-6 sm:px-6 sm:pb-16 sm:pt-10">
+        <main className="mx-auto w-full max-w-5xl flex-1 px-4 pb-28 pt-6 sm:px-6 md:pb-16 sm:pt-10">
           {children}
         </main>
 
         <nav
           aria-label="Main"
-          className="fixed inset-x-0 bottom-0 z-30 border-t border-border-low bg-background/95 pb-[env(safe-area-inset-bottom)] backdrop-blur sm:hidden"
+          className="fixed inset-x-0 bottom-0 z-30 border-t border-border-low bg-background/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden"
         >
           <ul className="mx-auto grid max-w-md grid-cols-5">
             {NAV_ITEMS.map((item) => {

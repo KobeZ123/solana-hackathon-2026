@@ -11,6 +11,7 @@ import { useBalance } from "../../lib/hooks/use-balance";
 import { useSendTransaction } from "../../lib/hooks/use-send-transaction";
 import { parseTransactionError } from "../../lib/errors";
 import { ellipsify } from "../../lib/explorer";
+import { WalletButton } from "../../components/wallet-button";
 import { EventHero } from "../../components/event-hero";
 import {
   ArrowRightIcon,
@@ -108,7 +109,7 @@ function MoneyStrip({
             <span className="text-foreground/40 [&>svg]:size-4">{it.icon}</span>
             {it.label}
           </dt>
-          <dd className="mt-1.5 truncate text-[15px] font-semibold">
+          <dd className="mt-1.5 text-sm font-semibold break-words sm:text-[15px]">
             {it.value}
           </dd>
         </div>
@@ -119,7 +120,7 @@ function MoneyStrip({
 
 /** Fully rounded champagne-metal call to action. */
 const ctaBtn =
-  "group relative flex h-14 w-full items-center justify-center rounded-full bg-gradient-to-b from-[#ecdcb9] via-champagne to-[#b99a64] px-12 text-[15px] font-semibold text-[#17130b] shadow-[inset_0_1px_0_rgba(255,255,255,0.45),0_10px_30px_-12px_rgba(214,185,136,0.55)] transition hover:-translate-y-px hover:brightness-105 disabled:translate-y-0 disabled:opacity-55 disabled:shadow-none";
+  "group relative flex h-14 w-full items-center justify-center rounded-full button-metal px-4 text-center sm:px-10 text-[15px] font-semibold shadow-[inset_0_1px_0_rgba(255,255,255,0.45),0_10px_30px_-12px_rgba(214,185,136,0.55)] transition hover:-translate-y-px hover:brightness-105 disabled:translate-y-0 disabled:opacity-55 disabled:shadow-none";
 const ghostBtn =
   "flex h-12 items-center justify-center rounded-full border border-border bg-surface px-5 text-sm font-medium transition hover:-translate-y-px hover:bg-elevated";
 
@@ -221,13 +222,6 @@ export function EventView({ pda }: { pda: string }) {
   let action: React.ReactNode;
   if (status === "connecting") {
     action = <p className="text-sm text-muted">Connecting wallet...</p>;
-  } else if (!wallet) {
-    action = (
-      <p className="flex items-center gap-2.5 rounded-full border border-border-low bg-elevated/50 px-5 py-3.5 text-sm text-foreground/70">
-        <LockIcon className="size-4 shrink-0 text-champagne" />
-        Connect a wallet to join this event.
-      </p>
-    );
   } else if (isHost) {
     action = (
       <div className="grid grid-cols-2 gap-2">
@@ -268,6 +262,8 @@ export function EventView({ pda }: { pda: string }) {
         This event has ended.
       </p>
     );
+  } else if (!wallet) {
+    action = <WalletButton reservationFee={formatSol(event.entryFee, 9)} />;
   } else {
     action = (
       <div className="space-y-2">
@@ -279,9 +275,9 @@ export function EventView({ pda }: { pda: string }) {
         >
           {joining
             ? "Confirm in your wallet..."
-            : `Reserve your place · ${formatSol(event.entryFee)} SOL`}
+            : `Reserve your place · ${formatSol(event.entryFee, 9)} SOL`}
           {!joining && (
-            <ArrowRightIcon className="absolute right-5 size-5 transition group-hover:translate-x-0.5" />
+            <ArrowRightIcon className="absolute right-4 hidden size-5 sm:block transition motion-safe:group-hover:translate-x-0.5" />
           )}
         </button>
         {insufficient && (
@@ -327,8 +323,8 @@ export function EventView({ pda }: { pda: string }) {
           : { tone: "chrome", label: "Upcoming" };
 
   return (
-    <div className="mx-auto w-full max-w-2xl space-y-5">
-      <article className="overflow-hidden rounded-3xl border border-border-low bg-surface">
+    <div className="mx-auto w-full max-w-3xl space-y-5">
+      <article className="overflow-hidden rounded-2xl border border-border bg-surface">
         <EventHero seed={pda} coverUrl={summary?.coverUrl}>
           <Pill tone={badge.tone} dot={badge.dot}>
             {badge.label}
@@ -336,61 +332,65 @@ export function EventView({ pda }: { pda: string }) {
         </EventHero>
 
         <div className="space-y-6 p-5 pt-3 sm:p-7 sm:pt-4">
-          <header>
-            <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
-              {title}
-            </h1>
-            {summary?.summary && (
-              <p className="mt-2.5 max-w-prose text-[15px] leading-relaxed text-foreground/60">
-                {summary.summary}
-              </p>
-            )}
-            {summary === null && (
-              <p className="mt-2 text-xs text-muted">
-                No title or description is registered for this event.
-              </p>
-            )}
-          </header>
+          <div className="grid gap-6 sm:grid-cols-[1.25fr_1fr] sm:gap-8">
+            <header>
+              <h1 className="text-3xl font-semibold tracking-tight sm:text-5xl">
+                {title}
+              </h1>
+              {summary?.summary && (
+                <p className="mt-2.5 max-w-prose text-[15px] leading-relaxed text-foreground/60">
+                  {summary.summary}
+                </p>
+              )}
+              {summary === null && (
+                <p className="mt-2 text-xs text-muted">
+                  No title or description is registered for this event.
+                </p>
+              )}
+            </header>
 
-          <ul className="space-y-4">
-            <Fact icon={<CalendarIcon />} title={when.date} sub={when.time} />
-            <Fact
-              icon={unlocked ? <MapPinIcon /> : <LockIcon />}
-              title={unlocked ? "Location unlocked" : "Location after you join"}
-              sub={
-                unlocked
-                  ? "See the full details below"
-                  : "Exact address is shared with guests only"
-              }
-            />
-            <Fact
-              icon={<TicketIcon />}
-              title={
-                left === 0
-                  ? "Sold out"
-                  : `${left} of ${event.capacity} spots left`
-              }
-              sub={
-                event.checkedIn > 0
-                  ? `${event.ticketsSold} joined · ${event.checkedIn} checked in`
-                  : `${event.ticketsSold} joined`
-              }
-            >
-              <div
-                role="progressbar"
-                aria-valuenow={filled}
-                aria-valuemin={0}
-                aria-valuemax={100}
-                aria-label="Spots taken"
-                className="mt-2.5 h-1 w-full max-w-xs overflow-hidden rounded-full bg-white/10"
+            <ul className="space-y-4 border-t border-border pt-5 sm:border-t-0 sm:border-l sm:pt-0 sm:pl-6">
+              <Fact icon={<CalendarIcon />} title={when.date} sub={when.time} />
+              <Fact
+                icon={unlocked ? <MapPinIcon /> : <LockIcon />}
+                title={
+                  unlocked ? "Location unlocked" : "Location after you join"
+                }
+                sub={
+                  unlocked
+                    ? "See the full details below"
+                    : "Exact address is shared with guests only"
+                }
+              />
+              <Fact
+                icon={<TicketIcon />}
+                title={
+                  left === 0
+                    ? "Sold out"
+                    : `${left} of ${event.capacity} spots left`
+                }
+                sub={
+                  event.checkedIn > 0
+                    ? `${event.ticketsSold} joined · ${event.checkedIn} checked in`
+                    : `${event.ticketsSold} joined`
+                }
               >
                 <div
-                  className="h-full rounded-full bg-champagne transition-[width] duration-700"
-                  style={{ width: `${filled}%` }}
-                />
-              </div>
-            </Fact>
-          </ul>
+                  role="progressbar"
+                  aria-valuenow={filled}
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                  aria-label="Spots taken"
+                  className="mt-2.5 h-1 w-full max-w-xs overflow-hidden rounded-full bg-white/10"
+                >
+                  <div
+                    className="h-full rounded-full bg-champagne transition-[width] duration-700"
+                    style={{ width: `${filled}%` }}
+                  />
+                </div>
+              </Fact>
+            </ul>
+          </div>
 
           {action}
 
@@ -411,13 +411,12 @@ export function EventView({ pda }: { pda: string }) {
                 {
                   icon: <HostIcon />,
                   label: "Host",
-                  value: ellipsify(event.host),
+                  value: ellipsify(event.host, 4),
                 },
               ]}
             />
             <p className="px-1 text-xs text-muted">
-              The pool funds the event and pays guests who show up. Entry{" "}
-              {formatSol(event.entryFee)} SOL.
+              The pool funds the event and pays guests who show up.
             </p>
           </div>
         </div>
@@ -441,11 +440,6 @@ export function EventView({ pda }: { pda: string }) {
 
       {member && (isHost || hasTicket) && (
         <EventDetails pda={pda} wallet={member} />
-      )}
-      {!isHost && !hasTicket && (
-        <p className="px-1 text-xs text-muted">
-          Location and details unlock after you join.
-        </p>
       )}
     </div>
   );

@@ -7,7 +7,9 @@ import { lamportsToSolString } from "../lib/lamports";
 import { ellipsify } from "../lib/explorer";
 import { useCluster } from "./cluster-context";
 
-export function WalletButton() {
+export function WalletButton({
+  reservationFee,
+}: { reservationFee?: string } = {}) {
   const { connectors, connect, disconnect, wallet, status, error } =
     useWallet();
 
@@ -19,6 +21,7 @@ export function WalletButton() {
   const address = wallet?.account.address;
   const balance = useBalance(address);
 
+  const reservation = reservationFee !== undefined;
   const open = () => setIsOpen(true);
   const close = () => setIsOpen(false);
 
@@ -43,17 +46,28 @@ export function WalletButton() {
     return (
       <div className="relative" ref={ref}>
         <button
+          type="button"
+          aria-expanded={isOpen}
           onClick={() => (isOpen ? close() : open())}
-          className="cursor-pointer rounded-lg bg-primary px-4 py-2 text-xs font-medium text-primary-foreground shadow-xs transition hover:bg-primary/90"
+          className={`button-metal cursor-pointer rounded-full font-semibold ${reservation ? "min-h-12 w-full px-4 text-sm" : "px-3 py-2 text-xs sm:px-4"}`}
         >
-          Connect Wallet
+          {reservation
+            ? `Connect wallet to reserve · ${reservationFee} SOL`
+            : "Connect wallet"}
         </button>
 
         {isOpen && (
-          <div className="absolute right-0 top-full z-50 mt-2 w-64 rounded-xl border border-border-low bg-card p-3 shadow-lg">
+          <div
+            className={`absolute right-0 z-50 w-64 max-w-[calc(100vw-2rem)] rounded-xl border border-border bg-popover p-3 shadow-lg ${reservation ? "bottom-full mb-2" : "top-full mt-2"}`}
+          >
             <p className="mb-2 text-xs font-medium text-muted">
               Choose a wallet
             </p>
+            {connectors.length === 0 && (
+              <p className="text-xs text-muted">
+                Open SOLSocial in a browser with a Solana wallet installed.
+              </p>
+            )}
             <div className="space-y-1">
               {connectors.map((connector) => (
                 <button

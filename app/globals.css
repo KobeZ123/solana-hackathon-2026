@@ -115,3 +115,71 @@
     font-family: var(--font-geist-sans), system-ui, sans-serif;
   }
 }
+
+@layer components {
+  .button-metal {
+    color: #17130b;
+    background: linear-gradient(180deg, #ecdcb9, #d6b988 55%, #b99a64);
+    box-shadow: inset 0 1px 0 #ffffff73;
+    transition: filter 160ms ease;
+  }
+
+  .button-metal:hover:not(:disabled) {
+    filter: brightness(1.08);
+  }
+
+  .landing-hero {
+    background:
+      linear-gradient(90deg, var(--surface) 38%, transparent),
+      radial-gradient(
+        ellipse at 113% 92%,
+        var(--surface) 40%,
+        #6f6351 46%,
+        #e5c99f 47%,
+        #3d3a37 49%,
+        #1c1e20 54%,
+        #6e6d68 60%,
+        var(--surface) 68%
+      );
+  }
+
+  .event-photo-shade {
+    background:
+      linear-gradient(90deg, #090a0b 1%, #090a0be8 36%, #090a0b14 100%),
+      linear-gradient(0deg, #090a0bbf, transparent 48%);
+  }
+
+  @media (max-width: 639px) {
+    .landing-hero {
+      background:
+        linear-gradient(
+          90deg,
+          var(--surface) 30%,
+          color-mix(in srgb, var(--surface) 72%, transparent)
+        ),
+        radial-gradient(
+          ellipse at 130% 80%,
+          var(--surface) 42%,
+          #d6b988 46%,
+          #4e4a42 48%,
+          var(--surface) 68%
+        );
+    }
+
+    .event-photo-shade {
+      background: linear-gradient(
+        0deg,
+        #090a0b 3%,
+        #090a0bd9 40%,
+        #090a0b26 100%
+      );
+    }
+  }
+}
+
+@layer base {
+  :where(a, button, select, input, textarea):focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 3px;
+  }
+}

@@ -6,6 +6,7 @@ faucet), and drives the real generated client to build the data. It also writes 
 and vendor offers into the API's JSON store (`.data/store.json`).
 
 ## Use it
+
 ```bash
 # terminal 1: start validator + seed (stays running; Ctrl-C stops it and discards everything)
 SEED_FUND=<your-phantom-address> npm run seed      # SEED_FUND is optional: airdrops 50 free localnet SOL to you
@@ -13,26 +14,40 @@ SEED_FUND=<your-phantom-address> npm run seed      # SEED_FUND is optional: aird
 # terminal 2: run the app pointed at the local validator
 SOLANA_RPC_URL=http://127.0.0.1:8899 npm run dev
 ```
+
 Then choose **localnet** in the app header. In Phantom: Settings > Developer Settings > Testnet Mode >
 Solana Localnet (if your version offers it). If you already have a dev server running, restart it with the
 `SOLANA_RPC_URL` above, otherwise the API cannot read the local chain.
 
+To add just the three illustrated sample events to an already running local validator:
+
+```bash
+npx tsx scripts/seed-localnet.ts --showcase
+```
+
+This adds Builder Breakfast, After Hours, and Design Review to the existing file store and prints their links.
+It uses the local faucet and can be rerun while those events are open without creating duplicate illustrated listings.
+
 ## What it creates
-| Event | State | Shows off |
-|---|---|---|
-| Friday Night Jam | live now, 9 joined, 6 checked in | scanner, host dashboard |
-| Rooftop Sunset Meetup | upcoming, 7 joined | vendor sponsorships: one approved, one pending |
-| Saturday Board Game Night | upcoming, 11 of 12 spots | nearly full |
-| Builder Breakfast | upcoming, 3 joined | low fee |
-| Solana Study Circle (members only) | upcoming, network visibility | hidden unless you are connected |
-| Hack Night Recap | ended, 6 checked in, 3 claimed | payouts, a settled vendor |
-| Lakeside Picnic (cancelled) | cancelled, 1 refunded | refunds |
+
+| Event                              | State                            | Shows off                                      |
+| ---------------------------------- | -------------------------------- | ---------------------------------------------- |
+| Friday Night Jam                   | live now, 9 joined, 6 checked in | scanner, host dashboard                        |
+| Rooftop Sunset Meetup              | upcoming, 7 joined               | vendor sponsorships: one approved, one pending |
+| Saturday Board Game Night          | upcoming, 11 of 12 spots         | nearly full                                    |
+| Builder Breakfast                  | upcoming, 3 joined               | low entry fee and 40% attendee share           |
+| After Hours                        | upcoming, 8 joined               | loft mixer with lightning demos                |
+| Design Review                      | upcoming, 10 of 12 spots         | nearly full studio critique                    |
+| Solana Study Circle (members only) | upcoming, network visibility     | hidden unless you are connected                |
+| Hack Night Recap                   | ended, 6 checked in, 3 claimed   | payouts, a settled vendor                      |
+| Lakeside Picnic (cancelled)        | cancelled, 1 refunded            | refunds                                        |
 
 The data is spread over 2 hosts, 16 members and 3 vendors; members are reused across events,
 so the connection graph has real ties between those wallets. Your own wallet is not part of that graph until
 you attend an event, so the members-only event stays hidden from you at first, which is the intended behavior.
 
 ## Notes
+
 - The seeded wallets are throwaway and their keys are discarded, so you cannot act as the seeded hosts; host and
   join with your own wallet.
 - Seeding moves any existing `.data/store.json` to `.data/store.json.bak-<timestamp>` first, because a fresh

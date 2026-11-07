@@ -8,7 +8,9 @@
  * airdrops free localnet SOL to your own wallet(s) so you can host and join right away.
  */
 import {
+  EventStatus,
   fetchEvent,
+  fetchMaybeEvent,
   findEventPda,
   findSponsorshipPda,
   getApproveSponsorshipInstructionAsync,
@@ -34,6 +36,7 @@ import {
   chainNow,
   fundedSigner,
   rpc,
+  RPC_URL,
   send,
   waitUntilChainPast,
   warmUp,
@@ -54,6 +57,7 @@ interface Spec {
   title: string;
   summary: string;
   location: string;
+  coverUrl?: string;
   description: string;
   visibility?: Visibility;
   host: KeyPairSigner;
@@ -76,7 +80,7 @@ async function makeEvent(spec: Spec): Promise<Made> {
   const meta = {
     title: spec.title,
     summary: spec.summary,
-    coverUrl: null,
+    coverUrl: spec.coverUrl ?? null,
     details: { location: spec.location, description: spec.description },
   };
   await send(spec.host, [
@@ -96,7 +100,7 @@ async function makeEvent(spec: Spec): Promise<Made> {
     hostWallet: spec.host.address,
     title: meta.title,
     summary: meta.summary,
-    coverUrl: null,
+    coverUrl: meta.coverUrl,
     details: meta.details,
     metadataHash: await metadataHashHex(meta),
     visibility: spec.visibility ?? "public",
@@ -164,8 +168,127 @@ async function approve(host: KeyPairSigner, event: Address, sp: Address) {
   ]);
 }
 
+/** The three illustrated invitations in the champagne design. Locations are fictional. */
+const showcase = [
+  {
+    title: "Builder Breakfast",
+    summary:
+      "Coffee and a small table of people shipping things in Brooklyn. Bring one thing you made and one question you’re stuck on.",
+    coverUrl: "/events/builder-breakfast.webp",
+    location: "Foundry Coffee Room · Brooklyn, NY (demo venue)",
+    description:
+      "Grab an espresso, then take a seat for quick introductions twenty minutes after doors open. We’ll spend the rest of the morning trading feedback in small groups. Bring a sketch, a rough demo, or a question. Coffee and pastries are included.",
+    feeSol: 0.02,
+    capacity: 25,
+    payoutBps: 4000,
+    days: 2,
+    hourUtc: 14,
+    hours: 2,
+    guests: 3,
+  },
+  {
+    title: "After Hours",
+    summary:
+      "An evening in a Manhattan loft for indie makers and curious friends. Come for the conversation and stay for the lightning demos.",
+    coverUrl: "/events/after-hours.webp",
+    location: "The Amber Loft · Manhattan, NY (demo venue)",
+    description:
+      "Forty-five minutes after doors open, three makers will show what they’re building in five-minute demos. The rest of the evening is yours to meet someone new. Drinks and light bites are included.",
+    feeSol: 0.05,
+    capacity: 36,
+    payoutBps: 3000,
+    days: 5,
+    hourUtc: 0,
+    hours: 3,
+    guests: 8,
+  },
+  {
+    title: "Design Review",
+    summary:
+      "A small, hands-on critique in DUMBO. Pin up a work in progress and leave with a clearer next move.",
+    coverUrl: "/events/design-review.webp",
+    location: "Bridge Studio · DUMBO, Brooklyn, NY (demo venue)",
+    description:
+      "Bring one screen, object, or visual study and a decision you’re working through. Each person gets ten minutes for a focused critique, then we’ll compare notes over a drink. Observers are welcome.",
+    feeSol: 0.04,
+    capacity: 12,
+    payoutBps: 3500,
+    days: 7,
+    hourUtc: 23,
+    hours: 2,
+    guests: 10,
+  },
+];
+
+async function seedShowcase(host: KeyPairSigner, members: KeyPairSigner[]) {
+  const existing = await store.listEvents();
+  const events: Made[] = [];
+  for (const { days, hourUtc, hours, guests, ...content } of showcase) {
+    const now = await chainNow();
+    const start = new Date((now + days * DAY) * 1000);
+    start.setUTCHours(hourUtc, 0, 0, 0);
+    const startOffset = Math.floor(start.getTime() / 1000) - now;
+    const spec = {
+      ...content,
+      host,
+      startOffset,
+      endOffset: startOffset + hours * 3600,
+    };
+
+    // Keep a published invitation on the active ledger when rerunning the showcase.
+    const stored = existing.find(
+      (event) => event.coverUrl === content.coverUrl
+    );
+    const account = stored
+      ? await fetchMaybeEvent(rpc, stored.eventPda as Address, {
+          commitment: "confirmed",
+        })
+      : null;
+    if (
+      account?.exists &&
+      account.data.status === EventStatus.Open &&
+      account.data.endTs > BigInt(now)
+    ) {
+      const remaining = Math.min(
+        guests - account.data.ticketsSold,
+        account.data.capacity - account.data.ticketsSold
+      );
+      for (const member of members.slice(0, Math.max(0, remaining))) {
+        await join(member, account.address);
+      }
+      events.push({ spec, event: account.address });
+      continue;
+    }
+
+    const made = await makeEvent(spec);
+    for (const member of members.slice(0, guests))
+      await join(member, made.event);
+    events.push(made);
+  }
+  return events;
+}
+
+function printEvents(events: Made[]) {
+  console.log("\n[seed] done. Events:");
+  for (const { spec, event } of events) {
+    console.log(`  ${spec.title}\n    ${APP_URL}/events/${event}`);
+  }
+}
+
 async function main() {
+  if (
+    !["127.0.0.1", "localhost", "[::1]"].includes(new URL(RPC_URL).hostname)
+  ) {
+    throw new Error("The demo seed requires a local validator");
+  }
   await warmUp();
+  if (process.argv.includes("--showcase")) {
+    const host = await fundedSigner(2n);
+    const members: KeyPairSigner[] = [];
+    for (let i = 0; i < 10; i++) members.push(await fundedSigner(1n));
+    printEvents(await seedShowcase(host, members));
+    return;
+  }
   const store0 = await store.listEvents();
   if (store0.length) log(`note: store already has ${store0.length} events`);
 
@@ -300,19 +423,7 @@ async function main() {
   });
   for (const m of members.slice(0, 11)) await join(m, boardgames.event);
 
-  const breakfast = await makeEvent({
-    title: "Builder Breakfast",
-    summary: "Early coffee for people shipping things.",
-    location: "Corner Bakery, back room",
-    description: "Share what you are building. Tell us what is blocking you.",
-    host: maya,
-    feeSol: 0.02,
-    capacity: 25,
-    startOffset: 9 * DAY,
-    endOffset: 9 * DAY + 2 * 3600,
-    payoutBps: 4000,
-  });
-  for (const m of members.slice(5, 8)) await join(m, breakfast.event);
+  const illustrated = await seedShowcase(maya, members);
 
   const circle = await makeEvent({
     title: "Solana Study Circle (members only)",
@@ -385,18 +496,15 @@ async function main() {
     log(`airdropped 50 SOL to ${addr}`);
   }
 
-  console.log("\n[seed] done. Events:");
-  for (const m of [
+  printEvents([
+    ...illustrated,
     live,
     rooftop,
     boardgames,
-    breakfast,
     circle,
     past,
     picnic,
-  ]) {
-    console.log(`  ${m.spec.title}\n    ${APP_URL}/events/${m.event}`);
-  }
+  ]);
 }
 
 main().catch((e) => {

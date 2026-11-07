@@ -146,7 +146,7 @@ export function VendorView() {
           Vendor
         </h1>
         <p className="rounded-2xl border border-border-low bg-card p-5 text-sm text-muted">
-          Connect your wallet (top right) to register as a vendor. Vendors
+          Connect your wallet to register as a vendor. Vendors
           propose sponsorships to events and get paid from the host&apos;s
           budget after delivering.
         </p>

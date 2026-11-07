@@ -32,27 +32,33 @@ function subscribe(onChange: () => void) {
   };
 }
 
-function readCluster(): ClusterMoniker {
+function readCluster(defaultCluster: ClusterMoniker): ClusterMoniker {
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored && CLUSTERS.includes(stored as ClusterMoniker)) {
       return stored as ClusterMoniker;
     }
   } catch {
-    // storage blocked: fall back to the default
+    // Storage blocked. Use the configured default.
   }
-  return "devnet";
+  return defaultCluster;
 }
 
 export { CLUSTERS };
 
-export function ClusterProvider({ children }: { children: ReactNode }) {
-  // The server (and the first client render) use "devnet"; the saved choice is applied right
+export function ClusterProvider({
+  children,
+  defaultCluster,
+}: {
+  children: ReactNode;
+  defaultCluster: ClusterMoniker;
+}) {
+  // The server and the first client render use the configured default. Then the saved choice is applied right
   // after hydration, so a saved non-default cluster no longer causes a hydration mismatch.
   const cluster = useSyncExternalStore<ClusterMoniker>(
     subscribe,
-    readCluster,
-    () => "devnet"
+    () => readCluster(defaultCluster),
+    () => defaultCluster
   );
 
   const setCluster = useCallback((c: ClusterMoniker) => {

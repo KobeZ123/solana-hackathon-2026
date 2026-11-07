@@ -8,7 +8,23 @@ This is a project built for the Solana 2026 hackathon: https://www.mlh.com/event
 
 **Event hosting and community-building, on-chain.** SOLSocial turns every RSVP into a small Solana payment, so hosts know who is really coming, the event is funded before it starts, and the people who show up get rewarded.
 
-How the transaction makes planning easier:
+## App preview
+
+![SOLSocial event discovery showing Builder Breakfast, After Hours, and Design Review with ticket prices and availability](docs/screenshots/discovery.jpg)
+
+*Event discovery in the seeded localnet demo. Try it with the [demo data setup](docs/SEED.md).*
+
+<details>
+<summary>Landing page and event reservation</summary>
+
+![SOLSocial landing page with the champagne design, Host an event and Browse events buttons, and a summary of how ticketing works](docs/screenshots/landing.jpg)
+
+![Builder Breakfast reservation page showing the cover, ticket availability, 0.02 SOL entry fee, and 40% attendee payout](docs/screenshots/builder-breakfast.jpg)
+
+</details>
+
+## How it works
+
 - **Real headcount.** Joining is a payment, so tickets sold means committed guests, not maybes.
 - **Funded up front.** Entry fees pool into an on-chain escrow (a PDA vault), so the host isn't fronting the cost.
 - **Showing up pays.** After the event, a host-chosen share of the pool (10-50%, fixed on-chain) is split equally among guests who checked in.

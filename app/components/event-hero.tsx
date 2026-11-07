@@ -19,7 +19,7 @@ function seeded(seed: string, i: number): number {
 export function EventHero({
   seed,
   coverUrl,
-  backHref = "/",
+  backHref = "/#events",
   children,
 }: {
   seed: string;
@@ -66,7 +66,7 @@ export function EventHero({
       <Link
         href={backHref}
         aria-label="Back to events"
-        className="absolute top-4 left-4 flex size-10 items-center justify-center rounded-full border border-white/10 bg-black/40 text-foreground backdrop-blur transition hover:bg-black/60"
+        className="absolute top-4 left-4 flex size-10 items-center justify-center rounded-full border border-white/10 bg-black/40 text-ivory backdrop-blur transition hover:bg-black/60"
       >
         <ArrowLeftIcon />
       </Link>

@@ -17,6 +17,7 @@ export type EventListItem = {
   ticketsSold?: number;
   /** Unix seconds. */
   startTs?: number;
+  endTs?: number;
   status?: string;
   /** Feed only: the shared event connecting you to the host ("from your network"). */
   via?: SharedEventInfo;
@@ -81,6 +82,7 @@ export function parseEventList(body: unknown): EventListItem[] {
           chain.tickets_sold
       ),
       startTs: num(e.startTs ?? e.start_ts ?? chain.startTs ?? chain.start_ts),
+      endTs: num(e.endTs ?? e.end_ts ?? chain.endTs ?? chain.end_ts),
       status: str(e.status) ?? str(chain.status),
       via: parseSharedEvent(e.via) ?? undefined,
     });

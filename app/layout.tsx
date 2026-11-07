@@ -38,12 +38,16 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const rpc = process.env.SOLANA_RPC_URL ?? "";
+  const localRpc = /^http:\/\/(localhost|127\.0\.0\.1|\[::1\]):8899\/?$/.test(
+    rpc
+  );
   return (
     <html lang="en" suppressHydrationWarning>
       <body
         className={`${geistSans.variable} ${geistMono.variable} ${instrumentSerif.variable} antialiased`}
       >
-        <Providers>
+        <Providers defaultCluster={localRpc ? "localnet" : "devnet"}>
           <SiteShell>{children}</SiteShell>
         </Providers>
       </body>
