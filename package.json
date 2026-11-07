@@ -29,6 +29,7 @@
     "ci": "npm run build && npm run lint && npm run format:check",
     "codama:js": "codama run js",
     "dev": "next dev",
+    "e2e": "bash scripts/e2e-localnet.sh",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "lint": "eslint",
@@ -44,8 +45,8 @@
     "@wallet-standard/app": "^1.1.0",
     "@wallet-standard/base": "^1.1.0",
     "@wallet-standard/features": "^1.1.0",
-    "jose": "^6.2.15",
     "@yudiel/react-qr-scanner": "^2.6.0",
+    "jose": "^6.2.15",
     "next": "16.4.3",
     "next-themes": "^0.4.6",
     "qrcode.react": "^4.2.0",
@@ -68,6 +69,7 @@
     "eslint-config-next": "16.0.10",
     "prettier": "^3.6.2",
     "tailwindcss": "^4",
+    "tsx": "^4.23.15",
     "typescript": "^5",
     "vitest": "^3.2.7"
   }
