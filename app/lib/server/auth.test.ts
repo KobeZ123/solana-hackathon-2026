@@ -26,7 +26,7 @@ async function setup(now = 1_000_000) {
 
 describe("sign-in message", () => {
   it("has the documented exact format", () => {
-    expect(buildSignInMessage("abc")).toBe("Sign in to Event Pool: abc");
+    expect(buildSignInMessage("abc")).toBe("Sign in to SOLSocial: abc");
   });
 });
 

@@ -1,4 +1,4 @@
-# Event Pool: Design Spec (working title)
+# SOLSocial: Design Spec
 
 Event hosting infrastructure where entry fees fund the event, tickets are verifiable on Solana, and showing up gets you paid.
 

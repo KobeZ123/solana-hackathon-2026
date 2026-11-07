@@ -206,7 +206,7 @@ export const DELIVERY_REJECT_COPY: Record<
 > = {
   malformed: {
     title: "Not a vendor pass",
-    hint: "This QR code is not an Event Pool vendor delivery pass.",
+    hint: "This QR code is not a SOLSocial vendor delivery pass.",
   },
   wrong_event: {
     title: "Wrong event",

@@ -74,7 +74,7 @@ export const REJECT_COPY: Record<
 > = {
   malformed: {
     title: "Not a ticket",
-    hint: "This QR code is not an Event Pool ticket.",
+    hint: "This QR code is not a SOLSocial ticket.",
   },
   wrong_event: {
     title: "Wrong event",

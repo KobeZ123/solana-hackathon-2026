@@ -7,7 +7,7 @@ Last updated: 2026-11-06 (mid-build, orchestrator checkpoint 2).
 - Idea: event hosting where entry fees fund the event, QR tickets verified on Solana, attendees airdropped the pool share for showing up.
 - Design: [DESIGN.md](./DESIGN.md). Work breakdown and status table: [TICKETS.md](./TICKETS.md). One GitHub issue per ticket.
 - Stack: Anchor 1.1.2 program, Next.js 16 app + API routes, `@solana/kit`, Codama client, Phantom via wallet-standard, Supabase (optional; JSON-file store by default locally).
-- Program ID: `E4SJunPXu5ZyoiSpz9Nk4jUAQWjj7qif6fTBDjR1Ping` (keypair outside the repo at `/Volumes/KobeT9/devhome/keys/event_pool-keypair.json`; **back this file up**, it is the program's upgrade authority key for the devnet deploy).
+- Program ID: `E4SJunPXu5ZyoiSpz9Nk4jUAQWjj7qif6fTBDjR1Ping` (keypair outside the repo at `$DEV_HOME/keys/event_pool-keypair.json`; **back this file up**, it is the program's upgrade authority key for the devnet deploy).
 
 ## Current state
 Landed on main (orchestrator re-ran the gates on main/branches after merging; results below):
@@ -20,7 +20,7 @@ In flight: T42 (vendor UI + vendor e2e scenario), T60 (devnet deploy + DEPLOY.md
 Live status: table in TICKETS.md and the issue list.
 
 ## Machine/environment notes (important)
-- The internal disk of this Mac was ~100% full (about 1 GB free). Toolchains and caches are redirected to `/Volumes/KobeT9/devhome` via `scripts/env.sh` and `scripts/with-devhome.sh`. Use them for every anchor/cargo command. If you free up disk space you can drop the redirection.
+- The internal disk of this Mac was ~100% full (about 1 GB free). Toolchains and caches are redirected to `$DEV_HOME` via `scripts/env.sh` and `scripts/with-devhome.sh`. Use them for every anchor/cargo command. If you free up disk space you can drop the redirection.
 - Pinned Rust for the program is 1.96 (`anchor/rust-toolchain.toml`).
 - The generated Codama client (`app/generated/event_pool`) is committed; regenerate with `npm run setup` (through `with-devhome.sh`), never hand-merge it.
 

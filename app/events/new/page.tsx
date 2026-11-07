@@ -1,6 +1,6 @@
 import { CreateEventForm } from "./create-event-form";
 
-export const metadata = { title: "Create event | Event Pool" };
+export const metadata = { title: "Create event | SOLSocial" };
 
 export default function NewEventPage() {
   return (

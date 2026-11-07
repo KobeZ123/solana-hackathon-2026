@@ -16,9 +16,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Event Pool",
+  title: "SOLSocial",
   description:
-    "Host events where guests who show up split a share of the entry-fee pool, verified on Solana.",
+    "Host events and build communities. Ticketing happens on-chain and guests who show up split a share of the entry-fee pool.",
   icons: {
     icon: "/icon.svg",
     shortcut: "/icon.svg",

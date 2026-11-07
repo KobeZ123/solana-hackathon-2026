@@ -1,6 +1,6 @@
 import { TicketView } from "./ticket-view";
 
-export const metadata = { title: "My ticket | Event Pool" };
+export const metadata = { title: "My ticket | SOLSocial" };
 
 export default async function TicketPage({
   params,

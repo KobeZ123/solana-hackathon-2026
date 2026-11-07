@@ -99,7 +99,7 @@ describe("apiFetch", () => {
 describe("signInWithWallet", () => {
   it("signs the nonce message verbatim and stores the token", async () => {
     const kp = nacl.sign.keyPair();
-    const message = "Sign in to Event Pool: abc123";
+    const message = "Sign in to SOLSocial: abc123";
     const token = jwt(future());
     const calls: { path: string; body: Record<string, string> }[] = [];
     const fetchImpl = vi.fn(async (path: string, init?: RequestInit) => {

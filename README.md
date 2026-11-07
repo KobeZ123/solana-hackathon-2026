@@ -4,15 +4,19 @@ by: Kobe Zheng
 
 This is a project built for the Solana 2026 hackathon: https://www.mlh.com/events/solana-hackathon
 
-# Event Pool
+# SOLSocial
 
-Event hosting where **entry fees fund the event, tickets are verified on Solana, and showing up gets you paid.**
+**Event hosting and community-building, on-chain.** SOLSocial turns every RSVP into a small Solana payment, so hosts know who is really coming, the event is funded before it starts, and the people who show up get rewarded.
 
-- Hosts create an event with a minimum entry fee. Fees go into an on-chain escrow pool (a PDA vault).
-- Members pay to join and get a ticket. Event details unlock only for ticket holders.
-- The ticket is a rotating, signed QR code. The host scans it at the door and the check-in is recorded on-chain.
-- After the event, a host-chosen share of the pool (10-50%) is split equally among everyone who actually showed up. The rest is the host's event budget.
-- Stretch features (built): **vendors** can propose sponsorships, get approved by the host, prove delivery with a QR, and be paid from the pool; **graph-gated discovery** shows you events hosted by people you have been at events with.
+How the transaction makes planning easier:
+- **Real headcount.** Joining is a payment, so tickets sold means committed guests, not maybes.
+- **Funded up front.** Entry fees pool into an on-chain escrow (a PDA vault), so the host isn't fronting the cost.
+- **Showing up pays.** After the event, a host-chosen share of the pool (10-50%, fixed on-chain) is split equally among guests who checked in.
+- **Fast, fraud-resistant door.** The ticket is a signed QR that refreshes every 20 seconds. The host scans it and the check-in is recorded on-chain.
+- **Vendors get paid automatically**: propose a sponsorship, host approves, scan a delivery QR, get paid from the pool.
+- **Community that compounds**: events can be visible only to people you've attended events with, so showing up widens your circle.
+
+Pitch, talking points and app copy: [docs/PITCH.md](docs/PITCH.md)
 
 Design: [docs/DESIGN.md](docs/DESIGN.md) · Work breakdown and status: [docs/TICKETS.md](docs/TICKETS.md) · **Handoff / current state: [docs/HANDOFF.md](docs/HANDOFF.md)** · Deploy: [docs/DEPLOY.md](docs/DEPLOY.md) · E2E: [docs/E2E.md](docs/E2E.md)
 

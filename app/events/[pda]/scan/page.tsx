@@ -1,6 +1,6 @@
 import { Scanner } from "./scanner";
 
-export const metadata = { title: "Scanner | Event Pool" };
+export const metadata = { title: "Scanner | SOLSocial" };
 
 export default async function ScanPage({
   params,

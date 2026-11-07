@@ -1,6 +1,6 @@
 import { HostDashboard } from "./host-dashboard";
 
-export const metadata = { title: "Host dashboard | Event Pool" };
+export const metadata = { title: "Host dashboard | SOLSocial" };
 
 export default async function HostPage({
   params,

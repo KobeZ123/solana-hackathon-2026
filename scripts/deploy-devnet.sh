@@ -97,7 +97,7 @@ done
 # 6. Deploy / upgrade
 echo "== deploying to devnet"
 solana program deploy "$SO" --url "$RPC_URL" --keypair "$DEPLOYER_KEYPAIR" \
-  --program-id "$PROGRAM_KP" --max-sign-attempts 20 --use-rpc
+  --program-id "$PROGRAM_KP" --max-sign-attempts "${MAX_SIGN_ATTEMPTS:-100}" --use-rpc
 
 # 7. Verify
 echo "== solana program show"

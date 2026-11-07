@@ -7,7 +7,7 @@ Program id (fixed, from the committed keypair pubkey): `E4SJunPXu5ZyoiSpz9Nk4jUA
 ## 1. Deploy the program to devnet
 
 Prerequisites: Solana CLI, Anchor (see `scripts/env.sh`), and the real program keypair at
-`$DEV_HOME/keys/event_pool-keypair.json` (default `DEV_HOME=/Volumes/KobeT9/devhome`). The keypair is
+`$DEV_HOME/keys/event_pool-keypair.json` (default set in `scripts/env.sh`). The keypair is
 never committed or printed; the script checks its pubkey matches the id above and aborts otherwise.
 
 ```bash

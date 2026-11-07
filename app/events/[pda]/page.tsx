@@ -1,6 +1,6 @@
 import { EventView } from "./event-view";
 
-export const metadata = { title: "Event | Event Pool" };
+export const metadata = { title: "Event | SOLSocial" };
 
 export default async function EventPage({
   params,

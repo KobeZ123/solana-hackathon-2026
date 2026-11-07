@@ -1,6 +1,6 @@
 import { ClaimView } from "./claim-view";
 
-export const metadata = { title: "Claim or refund | Event Pool" };
+export const metadata = { title: "Claim or refund | SOLSocial" };
 
 export default async function ClaimPage({
   params,

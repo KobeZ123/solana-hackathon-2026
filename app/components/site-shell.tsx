@@ -42,9 +42,9 @@ function Logo() {
         aria-hidden
         className="flex size-7 items-center justify-center rounded-lg bg-primary text-xs font-black text-primary-foreground"
       >
-        EP
+        SS
       </span>
-      Event Pool
+      SOLSocial
     </Link>
   );
 }

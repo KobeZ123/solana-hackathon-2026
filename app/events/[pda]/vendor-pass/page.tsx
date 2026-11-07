@@ -1,6 +1,6 @@
 import { VendorPassView } from "./vendor-pass-view";
 
-export const metadata = { title: "Vendor pass | Event Pool" };
+export const metadata = { title: "Vendor pass | SOLSocial" };
 
 export default async function VendorPassPage({
   params,
