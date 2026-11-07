@@ -2,6 +2,8 @@ import { getAddressEncoder, type Address } from "@solana/kit";
 import {
   accountDiscriminator,
   type Chain,
+  type OnChainSponsorship,
+  type OnChainVendorProfile,
   type OnChainEvent,
   type TicketRecord,
 } from "./chain";
@@ -11,6 +13,16 @@ import {
 export class FakeChain implements Chain {
   events = new Map<string, OnChainEvent>();
   tickets = new Set<string>(); // `${event}:${member}`
+  vendors = new Map<string, OnChainVendorProfile>();
+  sponsorships: OnChainSponsorship[] = [];
+  async getVendorProfile(wallet: string) {
+    this.check();
+    return this.vendors.get(wallet) ?? null;
+  }
+  async listSponsorships(event: string) {
+    this.check();
+    return this.sponsorships.filter((s) => s.event === event);
+  }
   failRpc = false;
   listTicketsCalls = 0;
 

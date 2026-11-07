@@ -50,10 +50,12 @@ describe("delivery payload", () => {
     const { key, payload } = setup();
     const v = (p = payload, k = key.publicKey, o = {}) =>
       verifyDeliveryPayload(p, k, { now: NOW, ...o });
-    expect(verifyDeliveryPayload(payload, key.publicKey, { now: NOW + 31 }))
-      .toMatchObject({ ok: false, reason: "expired" });
-    expect(verifyDeliveryPayload(payload, key.publicKey, { now: NOW - 6 }))
-      .toMatchObject({ ok: false, reason: "future" });
+    expect(
+      verifyDeliveryPayload(payload, key.publicKey, { now: NOW + 31 })
+    ).toMatchObject({ ok: false, reason: "expired" });
+    expect(
+      verifyDeliveryPayload(payload, key.publicKey, { now: NOW - 6 })
+    ).toMatchObject({ ok: false, reason: "future" });
     expect(v({ ...payload, vendor: EVENT })).toMatchObject({
       reason: "bad_signature",
     });

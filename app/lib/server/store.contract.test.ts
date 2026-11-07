@@ -72,6 +72,49 @@ export function runStoreContract(name: string, make: () => Store) {
       expect(rows.find((r) => r.wallet === "w")?.checkedIn).toBe(true);
     });
 
+    it("vendors: upsert replaces by wallet; unknown is null", async () => {
+      const s = make();
+      expect(await s.getVendor("v")).toBeNull();
+      const base = {
+        wallet: "v",
+        name: "Taco Truck",
+        logoUrl: null,
+        description: "",
+        updatedAt: "2026-01-01T00:00:00.000Z",
+      };
+      await s.upsertVendor(base);
+      await s.upsertVendor({
+        ...base,
+        name: "Taco Truck 2",
+        logoUrl: "https://x/y.png",
+      });
+      expect(await s.getVendor("v")).toMatchObject({
+        name: "Taco Truck 2",
+        logoUrl: "https://x/y.png",
+      });
+    });
+
+    it("offers: upsert by (event, vendor); list by event", async () => {
+      const s = make();
+      const o = (e: string, v: string, text: string) => ({
+        eventPda: e,
+        vendorWallet: v,
+        text,
+        offerHash: "ab".repeat(32),
+        updatedAt: "2026-01-01T00:00:00.000Z",
+      });
+      expect(await s.getOffer("e1", "v1")).toBeNull();
+      await s.upsertOffer(o("e1", "v1", "first"));
+      await s.upsertOffer(o("e1", "v1", "second"));
+      await s.upsertOffer(o("e1", "v2", "other vendor"));
+      await s.upsertOffer(o("e2", "v1", "other event"));
+      expect((await s.getOffer("e1", "v1"))?.text).toBe("second");
+      expect(
+        (await s.listOffers("e1")).map((x) => x.vendorWallet).sort()
+      ).toEqual(["v1", "v2"]);
+      expect(await s.listOffers("none")).toEqual([]);
+    });
+
     it("concurrent consumes yield exactly one winner", async () => {
       const s = make();
       await s.putNonce({ wallet: "w", nonce: "n", expiresAt: 5000 });
@@ -91,11 +134,15 @@ function fakePostgrest(): typeof fetch {
     auth_nonces: [],
     events: [],
     attendance: [],
+    vendors: [],
+    sponsorship_offers: [],
   };
   const keyOf: Record<string, string[]> = {
     auth_nonces: ["wallet"],
     events: ["event_pda"],
     attendance: ["event_pda", "wallet"],
+    vendors: ["wallet"],
+    sponsorship_offers: ["event_pda", "vendor_wallet"],
   };
   const json = (status: number, body?: unknown) =>
     new Response(body === undefined ? "" : JSON.stringify(body), { status });
@@ -132,6 +179,10 @@ function fakePostgrest(): typeof fetch {
     let out = [...rows];
     const pda = u.searchParams.get("event_pda");
     if (pda) out = out.filter((r) => r.event_pda === pda.replace(/^eq\./, ""));
+    for (const col of ["wallet", "vendor_wallet"]) {
+      const v = u.searchParams.get(col);
+      if (v) out = out.filter((r) => r[col] === v.replace(/^eq\./, ""));
+    }
     if (u.searchParams.get("order") === "created_at.desc") {
       out.sort((a, b) =>
         String(b.created_at).localeCompare(String(a.created_at))

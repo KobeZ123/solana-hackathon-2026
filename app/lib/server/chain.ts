@@ -10,7 +10,9 @@ import {
   isAddress,
   type Address,
 } from "@solana/kit";
+import { getSponsorshipDecoder } from "../../generated/event_pool/accounts/sponsorship";
 import { getTicketDecoder } from "../../generated/event_pool/accounts/ticket";
+import { getVendorProfileDecoder } from "../../generated/event_pool/accounts/vendorProfile";
 import { PROGRAM_ID } from "../config";
 import { bytesToHex } from "../metadata";
 
@@ -50,7 +52,37 @@ export interface TicketRecord {
   checkedInAt: number;
 }
 
+export type SponsorshipStatusName =
+  "proposed" | "approved" | "delivered" | "paid" | "rejected";
+
+const SPONSORSHIP_STATUSES: SponsorshipStatusName[] = [
+  "proposed",
+  "approved",
+  "delivered",
+  "paid",
+  "rejected",
+];
+
+/** A decoded `Sponsorship` account. */
+export interface OnChainSponsorship {
+  event: string;
+  vendor: string; // vendor authority wallet
+  amount: bigint; // lamports
+  status: SponsorshipStatusName;
+  offerHash: string; // 64 lowercase hex chars
+}
+
+/** A decoded `VendorProfile` account. */
+export interface OnChainVendorProfile {
+  authority: string;
+  vendorKey: string;
+}
+
 export interface Chain {
+  /** Decoded VendorProfile for a vendor wallet, or null if not registered. */
+  getVendorProfile(wallet: string): Promise<OnChainVendorProfile | null>;
+  /** Every Sponsorship of an event (any status). */
+  listSponsorships(eventPda: string): Promise<OnChainSponsorship[]>;
   /** Every `Ticket` account of the program (`getProgramAccounts`). */
   listTickets(): Promise<TicketRecord[]>;
   /** Decoded Event account, or null if it does not exist / is not a valid Event. */
@@ -69,7 +101,9 @@ export interface RawAccount {
 /** Fetches all program-owned accounts whose data starts with `discriminator`. */
 export type ProgramAccountSource = (
   programId: string,
-  discriminator: Uint8Array
+  discriminator: Uint8Array,
+  /** Optional extra memcmp filter (e.g. Sponsorship.event at offset 8). */
+  extra?: { offset: number; bytes: Uint8Array }
 ) => Promise<RawAccount[]>;
 
 /** Fetches raw accounts (null for missing), index-aligned with the input addresses. */
@@ -85,6 +119,8 @@ export function accountDiscriminator(name: string): Uint8Array {
 
 const EVENT_DISC = accountDiscriminator("Event");
 const TICKET_DISC = accountDiscriminator("Ticket");
+const SPONSORSHIP_DISC = accountDiscriminator("Sponsorship");
+const VENDOR_PROFILE_DISC = accountDiscriminator("VendorProfile");
 
 function hasDiscriminator(data: Uint8Array, disc: Uint8Array): boolean {
   return data.length >= 8 && disc.every((b, i) => data[i] === b);
@@ -215,6 +251,71 @@ export class AccountChain implements Chain {
     return (await this.getEvents([pda]))[0];
   }
 
+  async getVendorProfile(wallet: string) {
+    if (!isAddress(wallet)) return null;
+    const [pda] = await getProgramDerivedAddress({
+      programAddress: address(this.programId),
+      seeds: [
+        new TextEncoder().encode("vendor"),
+        getAddressEncoder().encode(wallet as Address),
+      ],
+    });
+    const [acc] = await this.source([pda]);
+    if (
+      !acc ||
+      acc.owner !== this.programId ||
+      !hasDiscriminator(acc.data, VENDOR_PROFILE_DISC)
+    ) {
+      return null;
+    }
+    try {
+      const v = getVendorProfileDecoder().decode(acc.data);
+      return { authority: v.authority, vendorKey: v.vendorKey };
+    } catch {
+      return null;
+    }
+  }
+
+  async listSponsorships(eventPda: string): Promise<OnChainSponsorship[]> {
+    if (!this.programAccounts) {
+      throw new Error("Chain has no program account source configured");
+    }
+    if (!isAddress(eventPda)) return [];
+    const accounts = await this.programAccounts(
+      this.programId,
+      SPONSORSHIP_DISC,
+      {
+        offset: 8,
+        bytes: new Uint8Array(getAddressEncoder().encode(eventPda as Address)),
+      }
+    );
+    const decoder = getSponsorshipDecoder();
+    const out: OnChainSponsorship[] = [];
+    for (const acc of accounts) {
+      if (
+        acc.owner !== this.programId ||
+        !hasDiscriminator(acc.data, SPONSORSHIP_DISC)
+      ) {
+        continue;
+      }
+      try {
+        const s = decoder.decode(acc.data);
+        const status = SPONSORSHIP_STATUSES[s.status];
+        if (!status || s.event !== eventPda) continue;
+        out.push({
+          event: s.event,
+          vendor: s.vendor,
+          amount: s.amount,
+          status,
+          offerHash: bytesToHex(new Uint8Array(s.offerHash)),
+        });
+      } catch {
+        /* malformed account: skip */
+      }
+    }
+    return out;
+  }
+
   async ticketExists(eventPda: string, member: string): Promise<boolean> {
     if (!isAddress(eventPda) || !isAddress(member)) return false;
     const [ticketPda] = await getProgramDerivedAddress({
@@ -265,7 +366,7 @@ export function rpcProgramAccountSource(rpcUrl: string): ProgramAccountSource {
   const rpc = createSolanaRpc(rpcUrl);
   const b64 = getBase64Encoder();
   const b58 = getBase58Decoder();
-  return async (programId, discriminator) => {
+  return async (programId, discriminator, extra) => {
     const res = await rpc
       .getProgramAccounts(address(programId), {
         encoding: "base64",
@@ -277,6 +378,17 @@ export function rpcProgramAccountSource(rpcUrl: string): ProgramAccountSource {
               encoding: "base58",
             },
           },
+          ...(extra
+            ? [
+                {
+                  memcmp: {
+                    offset: BigInt(extra.offset),
+                    bytes: b58.decode(extra.bytes) as never,
+                    encoding: "base58" as const,
+                  },
+                },
+              ]
+            : []),
         ],
       })
       .send();

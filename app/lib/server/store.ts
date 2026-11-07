@@ -29,6 +29,25 @@ export interface AttendanceRow {
   checkedInAt: string | null;
 }
 
+/** Stretch A: off-chain vendor profile (the on-chain VendorProfile holds only the key). */
+export interface StoredVendor {
+  wallet: string;
+  name: string;
+  logoUrl: string | null;
+  description: string;
+  updatedAt: string; // ISO
+}
+
+/** Stretch A: off-chain offer text for a sponsorship, keyed by (eventPda, vendorWallet). */
+export interface StoredOffer {
+  eventPda: string;
+  vendorWallet: string;
+  text: string;
+  /** sha256 hex of the canonical offer JSON; equals Sponsorship.offer_hash. */
+  offerHash: string;
+  updatedAt: string; // ISO
+}
+
 /**
  * Persistence boundary for the API. Implementations: Supabase (PostgREST, service role)
  * and a JSON file (local dev). Behaviour is pinned by `store.contract.test.ts`.
@@ -51,6 +70,14 @@ export interface Store {
   /** Stretch B: insert or replace attendance rows keyed by (eventPda, wallet). */
   upsertAttendance(rows: AttendanceRow[]): Promise<void>;
   listAttendance(): Promise<AttendanceRow[]>;
+
+  /** Stretch A: insert or replace the vendor profile for a wallet. */
+  upsertVendor(vendor: StoredVendor): Promise<void>;
+  getVendor(wallet: string): Promise<StoredVendor | null>;
+  /** Stretch A: insert or replace the offer keyed by (eventPda, vendorWallet). */
+  upsertOffer(offer: StoredOffer): Promise<void>;
+  getOffer(eventPda: string, vendorWallet: string): Promise<StoredOffer | null>;
+  listOffers(eventPda: string): Promise<StoredOffer[]>;
 }
 
 declare global {
