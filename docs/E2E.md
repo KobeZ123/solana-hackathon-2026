@@ -31,6 +31,17 @@ Takes about 1 minute (the lifecycle scenario waits ~25 s for `end_ts`).
   ends at the rent minimum (890880).
 - `cancel-refund`: event 2 h out, 2 joins, cancel, 2 refunds, ticket closed,
   vault back at the rent minimum, join on cancelled event fails.
+- `vendor`: 3 joins, gate delegated, 2 check-ins, vendor registers and proposes
+  (offer hash from `app/lib/offer`), non-host approve rejected, approve within
+  cap, over-cap approve fails with `SponsorshipBudgetExceeded` (6018) then reject,
+  delivery QR (`delivery:`) verified against `VendorProfile.vendor_key` (stale and
+  wrong-key payloads rejected), `confirm_delivery` by the gate only, `settle_vendor`
+  refused before end, then paid by an arbitrary payer; asserts exact vendor
+  payment, unchanged attendee pool and host budget, exact claims, host withdraw
+  minus the reservation, vault at the rent minimum.
+- `vendor-release`: two approved, one proposed; `release_sponsorship` refused
+  before end and for Proposed; release before `withdraw_host` frees the budget,
+  release after withdraw pays the host immediately; vault at the rent minimum.
 
 ## Extending
 
