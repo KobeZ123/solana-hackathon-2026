@@ -31,11 +31,11 @@ Source of truth for work breakdown. Each `## Txx` section is mirrored as a GitHu
 | T31 | API: events endpoints + ticket gating | 1 | T30 | #17 | #27 | done |
 | T40 | Stretch A program: vendors + sponsorship proposals | 3 | T13 | #18 | #40 | done |
 | T41 | Stretch A program: delivery + settlement | 3 | T40 | #19 | #43 | done |
-| T42 | Stretch A UI: vendor flow | 3 | T41, T25 | #20 | - | todo |
+| T42 | Stretch A UI: vendor flow | 3 | T41, T25 | #20 | #46 | done |
 | T50 | Stretch B API: attendance index + feed | 3 | T31, T12 | #21 | #39 | done |
 | T51 | Stretch B UI: feed, network page, visibility | 3 | T50 | #22 | #42 | done |
-| T60 | Devnet deploy + env + Vercel docs | 3 | all MVP | #23 | - | todo |
-| T61 | README, demo script, final handoff | 3 | all | #24 | - | todo |
+| T60 | Devnet deploy + env + Vercel docs | 3 | all MVP | #23 | #45 | partial (scripts + docs merged; devnet deploy pending) |
+| T61 | README, demo script, final handoff | 3 | all | #24 | direct commits | done |
 
 ---
 
