@@ -39,4 +39,11 @@ pub enum EventPoolError {
     AlreadyWithdrawn,
     #[msg("math overflow")]
     MathOverflow,
+    // Stretch A (append only)
+    #[msg("sponsorship would exceed the host budget")]
+    SponsorshipBudgetExceeded,
+    #[msg("sponsorship is not in the required status")]
+    InvalidSponsorshipStatus,
+    #[msg("account is not the sponsorship vendor")]
+    NotVendor,
 }

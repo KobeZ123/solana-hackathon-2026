@@ -5,16 +5,16 @@ import {
 import {
   getEventPoolErrorMessage,
   EVENT_POOL_ERROR__INVALID_TIME_RANGE,
-  EVENT_POOL_ERROR__MATH_OVERFLOW,
+  EVENT_POOL_ERROR__NOT_VENDOR,
   type EventPoolError,
 } from "../generated/event_pool";
 
 // Program error codes are contiguous, first and last variant bound the range.
-// Stretch-A errors appended later extend the range: update the upper bound then.
+// Stretch-A errors are appended after MathOverflow, so the last variant (NotVendor) is the bound.
 function isEventPoolErrorCode(code: number): code is EventPoolError {
   return (
     code >= EVENT_POOL_ERROR__INVALID_TIME_RANGE &&
-    code <= EVENT_POOL_ERROR__MATH_OVERFLOW
+    code <= EVENT_POOL_ERROR__NOT_VENDOR
   );
 }
 

@@ -17,23 +17,31 @@ import {
   type ReadonlyUint8Array,
 } from "@solana/kit";
 import {
+  parseApproveSponsorshipInstruction,
   parseCancelEventInstruction,
   parseCheckInInstruction,
   parseClaimInstruction,
   parseCreateEventInstruction,
   parseEndEventInstruction,
   parseJoinEventInstruction,
+  parseProposeSponsorshipInstruction,
   parseRefundInstruction,
+  parseRegisterVendorInstruction,
+  parseRejectSponsorshipInstruction,
   parseRotateTicketKeyInstruction,
   parseSetGateInstruction,
   parseWithdrawHostInstruction,
+  type ParsedApproveSponsorshipInstruction,
   type ParsedCancelEventInstruction,
   type ParsedCheckInInstruction,
   type ParsedClaimInstruction,
   type ParsedCreateEventInstruction,
   type ParsedEndEventInstruction,
   type ParsedJoinEventInstruction,
+  type ParsedProposeSponsorshipInstruction,
   type ParsedRefundInstruction,
+  type ParsedRegisterVendorInstruction,
+  type ParsedRejectSponsorshipInstruction,
   type ParsedRotateTicketKeyInstruction,
   type ParsedSetGateInstruction,
   type ParsedWithdrawHostInstruction,
@@ -44,7 +52,9 @@ export const EVENT_POOL_PROGRAM_ADDRESS =
 
 export enum EventPoolAccount {
   Event,
+  Sponsorship,
   Ticket,
+  VendorProfile,
 }
 
 export function identifyEventPoolAccount(
@@ -66,6 +76,17 @@ export function identifyEventPoolAccount(
     containsBytes(
       data,
       fixEncoderSize(getBytesEncoder(), 8).encode(
+        new Uint8Array([191, 110, 48, 7, 9, 44, 168, 248]),
+      ),
+      0,
+    )
+  ) {
+    return EventPoolAccount.Sponsorship;
+  }
+  if (
+    containsBytes(
+      data,
+      fixEncoderSize(getBytesEncoder(), 8).encode(
         new Uint8Array([41, 228, 24, 165, 78, 90, 235, 200]),
       ),
       0,
@@ -73,19 +94,34 @@ export function identifyEventPoolAccount(
   ) {
     return EventPoolAccount.Ticket;
   }
+  if (
+    containsBytes(
+      data,
+      fixEncoderSize(getBytesEncoder(), 8).encode(
+        new Uint8Array([212, 127, 49, 14, 158, 116, 14, 66]),
+      ),
+      0,
+    )
+  ) {
+    return EventPoolAccount.VendorProfile;
+  }
   throw new Error(
     "The provided account could not be identified as a eventPool account.",
   );
 }
 
 export enum EventPoolInstruction {
+  ApproveSponsorship,
   CancelEvent,
   CheckIn,
   Claim,
   CreateEvent,
   EndEvent,
   JoinEvent,
+  ProposeSponsorship,
   Refund,
+  RegisterVendor,
+  RejectSponsorship,
   RotateTicketKey,
   SetGate,
   WithdrawHost,
@@ -95,6 +131,17 @@ export function identifyEventPoolInstruction(
   instruction: { data: ReadonlyUint8Array } | ReadonlyUint8Array,
 ): EventPoolInstruction {
   const data = "data" in instruction ? instruction.data : instruction;
+  if (
+    containsBytes(
+      data,
+      fixEncoderSize(getBytesEncoder(), 8).encode(
+        new Uint8Array([184, 186, 247, 196, 254, 20, 246, 134]),
+      ),
+      0,
+    )
+  ) {
+    return EventPoolInstruction.ApproveSponsorship;
+  }
   if (
     containsBytes(
       data,
@@ -165,12 +212,45 @@ export function identifyEventPoolInstruction(
     containsBytes(
       data,
       fixEncoderSize(getBytesEncoder(), 8).encode(
+        new Uint8Array([93, 7, 1, 118, 145, 30, 15, 48]),
+      ),
+      0,
+    )
+  ) {
+    return EventPoolInstruction.ProposeSponsorship;
+  }
+  if (
+    containsBytes(
+      data,
+      fixEncoderSize(getBytesEncoder(), 8).encode(
         new Uint8Array([2, 96, 183, 251, 63, 208, 46, 46]),
       ),
       0,
     )
   ) {
     return EventPoolInstruction.Refund;
+  }
+  if (
+    containsBytes(
+      data,
+      fixEncoderSize(getBytesEncoder(), 8).encode(
+        new Uint8Array([192, 133, 122, 251, 31, 137, 113, 141]),
+      ),
+      0,
+    )
+  ) {
+    return EventPoolInstruction.RegisterVendor;
+  }
+  if (
+    containsBytes(
+      data,
+      fixEncoderSize(getBytesEncoder(), 8).encode(
+        new Uint8Array([67, 53, 221, 28, 25, 126, 166, 197]),
+      ),
+      0,
+    )
+  ) {
+    return EventPoolInstruction.RejectSponsorship;
   }
   if (
     containsBytes(
@@ -214,6 +294,9 @@ export type ParsedEventPoolInstruction<
   TProgram extends string = "E4SJunPXu5ZyoiSpz9Nk4jUAQWjj7qif6fTBDjR1Ping",
 > =
   | ({
+      instructionType: EventPoolInstruction.ApproveSponsorship;
+    } & ParsedApproveSponsorshipInstruction<TProgram>)
+  | ({
       instructionType: EventPoolInstruction.CancelEvent;
     } & ParsedCancelEventInstruction<TProgram>)
   | ({
@@ -232,8 +315,17 @@ export type ParsedEventPoolInstruction<
       instructionType: EventPoolInstruction.JoinEvent;
     } & ParsedJoinEventInstruction<TProgram>)
   | ({
+      instructionType: EventPoolInstruction.ProposeSponsorship;
+    } & ParsedProposeSponsorshipInstruction<TProgram>)
+  | ({
       instructionType: EventPoolInstruction.Refund;
     } & ParsedRefundInstruction<TProgram>)
+  | ({
+      instructionType: EventPoolInstruction.RegisterVendor;
+    } & ParsedRegisterVendorInstruction<TProgram>)
+  | ({
+      instructionType: EventPoolInstruction.RejectSponsorship;
+    } & ParsedRejectSponsorshipInstruction<TProgram>)
   | ({
       instructionType: EventPoolInstruction.RotateTicketKey;
     } & ParsedRotateTicketKeyInstruction<TProgram>)
@@ -249,6 +341,13 @@ export function parseEventPoolInstruction<TProgram extends string>(
 ): ParsedEventPoolInstruction<TProgram> {
   const instructionType = identifyEventPoolInstruction(instruction);
   switch (instructionType) {
+    case EventPoolInstruction.ApproveSponsorship: {
+      assertIsInstructionWithAccounts(instruction);
+      return {
+        instructionType: EventPoolInstruction.ApproveSponsorship,
+        ...parseApproveSponsorshipInstruction(instruction),
+      };
+    }
     case EventPoolInstruction.CancelEvent: {
       assertIsInstructionWithAccounts(instruction);
       return {
@@ -291,11 +390,32 @@ export function parseEventPoolInstruction<TProgram extends string>(
         ...parseJoinEventInstruction(instruction),
       };
     }
+    case EventPoolInstruction.ProposeSponsorship: {
+      assertIsInstructionWithAccounts(instruction);
+      return {
+        instructionType: EventPoolInstruction.ProposeSponsorship,
+        ...parseProposeSponsorshipInstruction(instruction),
+      };
+    }
     case EventPoolInstruction.Refund: {
       assertIsInstructionWithAccounts(instruction);
       return {
         instructionType: EventPoolInstruction.Refund,
         ...parseRefundInstruction(instruction),
+      };
+    }
+    case EventPoolInstruction.RegisterVendor: {
+      assertIsInstructionWithAccounts(instruction);
+      return {
+        instructionType: EventPoolInstruction.RegisterVendor,
+        ...parseRegisterVendorInstruction(instruction),
+      };
+    }
+    case EventPoolInstruction.RejectSponsorship: {
+      assertIsInstructionWithAccounts(instruction);
+      return {
+        instructionType: EventPoolInstruction.RejectSponsorship,
+        ...parseRejectSponsorshipInstruction(instruction),
       };
     }
     case EventPoolInstruction.RotateTicketKey: {

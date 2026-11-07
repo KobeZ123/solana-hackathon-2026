@@ -7,3 +7,4 @@
  */
 
 export * from "./eventStatus";
+export * from "./sponsorshipStatus";

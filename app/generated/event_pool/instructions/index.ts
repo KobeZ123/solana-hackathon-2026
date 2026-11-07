@@ -6,13 +6,17 @@
  * @see https://github.com/codama-idl/codama
  */
 
+export * from "./approveSponsorship";
 export * from "./cancelEvent";
 export * from "./checkIn";
 export * from "./claim";
 export * from "./createEvent";
 export * from "./endEvent";
 export * from "./joinEvent";
+export * from "./proposeSponsorship";
 export * from "./refund";
+export * from "./registerVendor";
+export * from "./rejectSponsorship";
 export * from "./rotateTicketKey";
 export * from "./setGate";
 export * from "./withdrawHost";

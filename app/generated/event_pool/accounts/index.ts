@@ -7,4 +7,6 @@
  */
 
 export * from "./event";
+export * from "./sponsorship";
 export * from "./ticket";
+export * from "./vendorProfile";
