@@ -127,9 +127,9 @@ curl -fsS -X POST -H "Authorization: Bearer $CRON_SECRET" https://<your-app>.ver
 - **Camera does not start**: browsers only expose the camera on HTTPS (or localhost). Use the Vercel URL,
   not an `http://<lan-ip>` URL; grant the permission in the site settings.
 - **Ticket QR missing after clearing browser data**: the ticket key is kept in `localStorage`. If it is
-  cleared, the old QR cannot be regenerated in this browser. The program has a `rotate_ticket_key`
-  instruction to bind a new key to the same ticket; if the UI does not expose it yet, ask the host to
-  check the attendee in manually or re-join with another wallet. Avoid clearing site data before the demo.
+  cleared, open the ticket page (`/events/<pda>/ticket`) and use **Recover ticket**: it sends the
+  `rotate_ticket_key` instruction (one wallet approval) to bind a fresh key to the same ticket, and the
+  QR works again. This is only possible before the ticket has been checked in.
 - **API returns 503 about JWT_SECRET or CRON_SECRET**: the variable is missing in that Vercel environment.
 - **Data disappears between requests on Vercel**: Supabase vars are unset, so the ephemeral file store is in
   use. Set both Supabase variables.
