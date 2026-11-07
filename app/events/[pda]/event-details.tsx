@@ -42,9 +42,9 @@ export function EventDetails({ pda, wallet }: { pda: string; wallet: string }) {
 
   if (!token) {
     return (
-      <div className="rounded-3xl border border-lavender/25 bg-lavender/[0.06] p-5 sm:p-6">
+      <div className="rounded-3xl border border-champagne/25 bg-champagne/[0.06] p-5 sm:p-6">
         <h2 className="flex items-center gap-2 text-sm font-semibold">
-          <LockIcon className="size-4 text-lavender" />
+          <LockIcon className="size-4 text-champagne" />
           Event details
         </h2>
         <p className="mt-1.5 text-sm text-foreground/60">
@@ -94,7 +94,7 @@ export function EventDetails({ pda, wallet }: { pda: string; wallet: string }) {
         <div className="mt-4 space-y-5 text-[15px]">
           {shown.location && (
             <div className="flex items-start gap-3.5">
-              <MapPinIcon className="mt-0.5 shrink-0 text-mint" />
+              <MapPinIcon className="mt-0.5 shrink-0 text-champagne" />
               <div>
                 <p className="font-medium whitespace-pre-wrap">
                   {shown.location}

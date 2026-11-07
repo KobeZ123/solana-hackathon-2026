@@ -42,12 +42,12 @@ import { ProposeSponsorship } from "./propose-sponsorship";
 /** Ticket account rent + a little for fees, on top of the entry fee. */
 const JOIN_OVERHEAD_LAMPORTS = 3_000_000n;
 
-type Tone = "lavender" | "mint" | "neutral" | "danger";
+type Tone = "champagne" | "chrome" | "neutral" | "danger";
 
 const toneClass: Record<Tone, string> = {
-  lavender: "bg-lavender/15 text-lavender",
-  mint: "bg-mint/15 text-mint",
-  neutral: "bg-white/10 text-foreground/80",
+  champagne: "bg-champagne/15 text-champagne ring-1 ring-champagne/25",
+  chrome: "bg-white/10 text-chrome ring-1 ring-white/10",
+  neutral: "bg-white/5 text-foreground/55 ring-1 ring-white/10",
   danger: "bg-destructive/15 text-destructive",
 };
 
@@ -117,9 +117,9 @@ function MoneyStrip({
   );
 }
 
-/** Fully rounded lavender call to action. */
+/** Fully rounded champagne-metal call to action. */
 const ctaBtn =
-  "group relative flex h-14 w-full items-center justify-center rounded-full bg-gradient-to-r from-[#e6dbf9] to-lavender px-12 text-[15px] font-semibold text-[#09090b] shadow-[0_8px_30px_-10px_rgba(191,165,237,0.6)] transition hover:-translate-y-px hover:shadow-[0_12px_34px_-8px_rgba(191,165,237,0.7)] disabled:translate-y-0 disabled:opacity-55 disabled:shadow-none";
+  "group relative flex h-14 w-full items-center justify-center rounded-full bg-gradient-to-b from-[#ecdcb9] via-champagne to-[#b99a64] px-12 text-[15px] font-semibold text-[#17130b] shadow-[inset_0_1px_0_rgba(255,255,255,0.45),0_10px_30px_-12px_rgba(214,185,136,0.55)] transition hover:-translate-y-px hover:brightness-105 disabled:translate-y-0 disabled:opacity-55 disabled:shadow-none";
 const ghostBtn =
   "flex h-12 items-center justify-center rounded-full border border-border bg-surface px-5 text-sm font-medium transition hover:-translate-y-px hover:bg-elevated";
 
@@ -224,7 +224,7 @@ export function EventView({ pda }: { pda: string }) {
   } else if (!wallet) {
     action = (
       <p className="flex items-center gap-2.5 rounded-full border border-border-low bg-elevated/50 px-5 py-3.5 text-sm text-foreground/70">
-        <LockIcon className="size-4 shrink-0 text-lavender" />
+        <LockIcon className="size-4 shrink-0 text-champagne" />
         Connect a wallet to join this event.
       </p>
     );
@@ -323,8 +323,8 @@ export function EventView({ pda }: { pda: string }) {
       : phase === "over" || eventStatusLabel(event.status) === "Ended"
         ? { tone: "neutral", label: "Ended" }
         : phase === "live"
-          ? { tone: "mint", label: "Live now", dot: true }
-          : { tone: "lavender", label: "Upcoming" };
+          ? { tone: "champagne", label: "Live now", dot: true }
+          : { tone: "chrome", label: "Upcoming" };
 
   return (
     <div className="mx-auto w-full max-w-2xl space-y-5">
@@ -385,7 +385,7 @@ export function EventView({ pda }: { pda: string }) {
                 className="mt-2.5 h-1 w-full max-w-xs overflow-hidden rounded-full bg-white/10"
               >
                 <div
-                  className="h-full rounded-full bg-lavender transition-[width] duration-700"
+                  className="h-full rounded-full bg-champagne transition-[width] duration-700"
                   style={{ width: `${filled}%` }}
                 />
               </div>

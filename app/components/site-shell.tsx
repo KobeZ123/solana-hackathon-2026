@@ -36,14 +36,8 @@ function Logo() {
   return (
     <Link
       href="/"
-      className="flex items-center gap-2 text-sm font-semibold tracking-tight"
+      className="font-serif text-[26px] leading-none tracking-tight text-foreground"
     >
-      <span
-        aria-hidden
-        className="flex size-7 items-center justify-center rounded-lg bg-primary text-xs font-black text-primary-foreground"
-      >
-        SS
-      </span>
       SOLSocial
     </Link>
   );

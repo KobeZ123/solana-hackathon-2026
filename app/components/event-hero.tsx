@@ -14,7 +14,7 @@ function seeded(seed: string, i: number): number {
 
 /**
  * Image-led header for an event. With a cover URL it shows the photo; without one it paints a
- * deterministic lavender/mint glow over the grid texture so cards never look empty.
+ * deterministic champagne/titanium glow over the grid texture so cards never look empty.
  */
 export function EventHero({
   seed,
@@ -32,7 +32,7 @@ export function EventHero({
   const y1 = 5 + Math.round(seeded(seed, 2) * 50);
   const x2 = 40 + Math.round(seeded(seed, 3) * 55);
   const y2 = 50 + Math.round(seeded(seed, 4) * 50);
-  const mintShare = 0.14 + seeded(seed, 5) * 0.16;
+  const coolShare = 0.2 + seeded(seed, 5) * 0.2;
 
   return (
     <div className="relative isolate aspect-[16/10] w-full overflow-hidden bg-surface sm:aspect-[16/7]">
@@ -49,8 +49,8 @@ export function EventHero({
           className="absolute inset-0"
           style={{
             backgroundImage: [
-              `radial-gradient(60% 80% at ${x1}% ${y1}%, rgba(191,165,237,0.5), transparent 70%)`,
-              `radial-gradient(55% 70% at ${x2}% ${y2}%, rgba(165,211,178,${mintShare}), transparent 70%)`,
+              `radial-gradient(60% 80% at ${x1}% ${y1}%, rgba(214,185,136,0.42), transparent 70%)`,
+              `radial-gradient(55% 70% at ${x2}% ${y2}%, rgba(133,139,144,${coolShare}), transparent 70%)`,
               "linear-gradient(rgba(255,255,255,0.045) 1px, transparent 1px)",
               "linear-gradient(90deg, rgba(255,255,255,0.045) 1px, transparent 1px)",
             ].join(","),

@@ -1,27 +1,39 @@
-# SOLSocial design system: "After Dark" (V2)
+# SOLSocial design system: Champagne & Titanium
 
-Reference mockup: `designs/initial-mockup` (PNG, extensionless). Tokens live in `app/globals.css` and are exposed to
-Tailwind as `canvas`, `surface`, `elevated`, `lavender`, `mint` (plus the existing semantic tokens).
+Reference mockups in `designs/`: `champagne-gold-mockup.png` is the current direction; `initial-mockup.png` is the
+earlier purple/mint exploration (superseded: we deliberately avoid a purple, Solana-branded look).
+Tokens live in `app/globals.css` and are exposed to Tailwind as `canvas`, `surface`, `elevated`, `titanium`,
+`chrome`, `champagne`, `ivory` (plus the existing semantic tokens: `primary`, `muted`, `border`, ...).
 
-## Tokens
+## Palette
 
-| Token    | Hex       | Use                                                    |
-| -------- | --------- | ------------------------------------------------------ |
-| Canvas   | `#09090B` | App background                                         |
-| Surface  | `#17171B` | Cards, panels                                          |
-| Elevated | `#232127` | Popovers, hover, raised controls                       |
-| Lavender | `#BFA5ED` | Key interactions: primary actions, links, focus        |
-| Mint     | `#A5D3B2` | Successful settlement, verified attendance, live state |
+A titanium-and-champagne hybrid: mostly monochrome, with gold reserved for important interactions and
+metallic reflections.
 
-Neutrals carry supporting content. In dark mode `--primary` is Lavender, `--ring` is Lavender.
+| Token                | Hex       | Use                                                                |
+| -------------------- | --------- | ------------------------------------------------------------------ |
+| Obsidian (`canvas`)  | `#090A0B` | App background                                                     |
+| Graphite (`surface`) | `#191B1E` | Cards, panels                                                      |
+| Elevated             | `#24272B` | Popovers, hover, raised controls (derived)                         |
+| Titanium             | `#858B90` | Supporting text, icons, hairlines                                  |
+| Chrome               | `#DCE0E2` | Borders and grid (at low opacity), secondary emphasis              |
+| Champagne            | `#D6B988` | Primary actions, focus ring, key states (live, selected, verified) |
+| Ivory                | `#F5F1E8` | Foreground text                                                    |
+
+In dark mode `--primary` and `--ring` are Champagne with near-black text (`#17130B`). The light theme is a
+secondary mapping (ivory canvas, a darker gold for contrast); the app defaults to dark.
+Functional states keep conventional colors where legibility matters (scan success/failure screens use green/red,
+errors use `destructive`).
 
 ## Principles
 
-- **Typography:** Geist for bold, modern product UI. Instrument Serif sparingly for invitation moments, never for
-  technical dashboards (not yet used).
+- **Typography:** Geist for the product UI. Instrument Serif (`font-serif`) only for the wordmark and invitation
+  moments, never for technical dashboards.
 - **Shape:** 12-16px radii for app surfaces; fully rounded primary actions. **Avoid wrapping every individual value in a card.**
   Group related values in one surface separated by hairlines.
-- **Color:** Lavender for key interactions, mint for settlement and verified attendance, neutrals for the rest.
+- **Color:** Champagne is rare and meaningful. Everything else is Obsidian, Graphite, Titanium, Chrome and Ivory.
+- **Metal:** primary buttons use a vertical champagne gradient (`#ECDCB9` to `#D6B988` to `#B99A64`) with a 1px
+  inner highlight; surfaces get hairline Chrome borders.
 - **Motion:** subtle hover elevation, slow image reveals, a soft QR refresh animation. No constantly animated gradients.
 
 ## Screen-by-screen direction
@@ -39,4 +51,4 @@ Neutrals carry supporting content. In dark mode `--primary` is Lavender, `--ring
 
 ## Status
 
-Done: tokens + Geist, event details page. Remaining screens above still use the previous layout with the new colors.
+Done: champagne tokens, Geist + serif wordmark, grid background, favicon, event details page. Remaining screens above keep their previous layouts with the new colors.

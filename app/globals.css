@@ -2,66 +2,70 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
+/* Champagne & titanium: see docs/DESIGN_SYSTEM.md */
 :root {
-  --background: #ffffff;
-  --foreground: #0a0a0a;
-  --primary: #171717;
-  --primary-foreground: #fafafa;
-  --muted: #737373;
-  --muted-foreground: #737373;
-  --card: #ffffff;
-  --card-foreground: #0a0a0a;
-  --popover: #ffffff;
-  --popover-foreground: #0a0a0a;
-  --border: #e5e5e5;
-  --border-low: #f5f5f5;
-  --input: #e5e5e5;
-  --accent: #f5f5f5;
-  --accent-foreground: #171717;
-  --cream: #f5f5f5;
-  --destructive: #ef4444;
-  --destructive-foreground: #ef4444;
-  --ring: #a3a3a3;
+  --obsidian: #090a0b;
+  --graphite: #191b1e;
+  --titanium: #858b90;
+  --chrome: #dce0e2;
+  --champagne: #d6b988;
+  --ivory: #f5f1e8;
   --radius: 0.625rem;
-  --canvas: #ffffff;
-  --surface: #f7f7f8;
-  --elevated: #efeff1;
-  --lavender: #7c5cc4;
-  --mint: #2f7d4b;
-  --secondary: #f5f5f5;
-  --secondary-foreground: #171717;
-  --font-sans: var(--font-geist-sans), system-ui, sans-serif;
-  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+
+  /* light theme (secondary; the app defaults to dark) */
+  --canvas: #f5f1e8;
+  --surface: #fbf9f4;
+  --elevated: #ece6d8;
+  --background: var(--canvas);
+  --foreground: #090a0b;
+  --accent-metal: #9a7a43;
+  --primary: #8c6e3c;
+  --primary-foreground: #fbf9f4;
+  --muted: #6b7075;
+  --muted-foreground: #858b90;
+  --card: var(--surface);
+  --card-foreground: #090a0b;
+  --popover: #ffffff;
+  --popover-foreground: #090a0b;
+  --border: rgba(9, 10, 11, 0.14);
+  --border-low: rgba(9, 10, 11, 0.07);
+  --input: rgba(9, 10, 11, 0.14);
+  --accent: var(--elevated);
+  --accent-foreground: #090a0b;
+  --cream: var(--elevated);
+  --destructive: #b42318;
+  --destructive-foreground: #b42318;
+  --ring: #8c6e3c;
+  --secondary: var(--elevated);
+  --secondary-foreground: #090a0b;
 }
 
 .dark {
-  /* After Dark V2: see docs/DESIGN_SYSTEM.md */
-  --canvas: #09090b;
-  --surface: #17171b;
-  --elevated: #232127;
-  --lavender: #bfa5ed;
-  --mint: #a5d3b2;
+  --canvas: var(--obsidian);
+  --surface: var(--graphite);
+  --elevated: #24272b;
+  --accent-metal: var(--champagne);
   --background: var(--canvas);
-  --foreground: #f4f4f5;
-  --primary: var(--lavender);
-  --primary-foreground: #09090b;
-  --muted: #a1a1aa;
-  --muted-foreground: #8b8b93;
+  --foreground: var(--ivory);
+  --primary: var(--champagne);
+  --primary-foreground: #17130b;
+  --muted: #9ba1a6;
+  --muted-foreground: var(--titanium);
   --card: var(--surface);
-  --card-foreground: #f4f4f5;
+  --card-foreground: var(--ivory);
   --popover: var(--elevated);
-  --popover-foreground: #f4f4f5;
-  --border: rgba(255, 255, 255, 0.1);
-  --border-low: rgba(255, 255, 255, 0.06);
-  --input: rgba(255, 255, 255, 0.12);
+  --popover-foreground: var(--ivory);
+  --border: rgba(220, 224, 226, 0.11);
+  --border-low: rgba(220, 224, 226, 0.06);
+  --input: rgba(220, 224, 226, 0.13);
   --accent: var(--elevated);
-  --accent-foreground: #f4f4f5;
+  --accent-foreground: var(--ivory);
   --cream: var(--elevated);
   --destructive: #f87171;
   --destructive-foreground: #f87171;
-  --ring: var(--lavender);
+  --ring: var(--champagne);
   --secondary: var(--elevated);
-  --secondary-foreground: #f4f4f5;
+  --secondary-foreground: var(--ivory);
 }
 
 @theme inline {
@@ -86,16 +90,19 @@
   --color-ring: var(--ring);
   --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);
-  --font-sans: var(--font-sans);
-  --font-mono: var(--font-mono);
+  --font-sans: var(--font-geist-sans), system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
   --color-canvas: var(--canvas);
   --color-surface: var(--surface);
   --color-elevated: var(--elevated);
-  --color-lavender: var(--lavender);
-  --color-mint: var(--mint);
+  --color-titanium: var(--titanium);
+  --color-chrome: var(--chrome);
+  --color-champagne: var(--accent-metal);
+  --color-ivory: var(--ivory);
+  --font-serif: var(--font-instrument-serif), Georgia, serif;
 }
 
 @layer base {
@@ -105,6 +112,6 @@
 
   body {
     @apply bg-background text-foreground antialiased;
-    font-family: var(--font-sans);
+    font-family: var(--font-geist-sans), system-ui, sans-serif;
   }
 }
