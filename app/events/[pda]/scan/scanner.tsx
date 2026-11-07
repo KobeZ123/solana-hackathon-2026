@@ -15,10 +15,13 @@ import {
   EventStatus,
   findTicketPda,
   getCheckInInstruction,
+  getConfirmDeliveryInstruction,
   getSetGateInstruction,
+  SponsorshipStatus,
   EVENT_POOL_ERROR__ALREADY_CHECKED_IN,
 } from "../../../generated/event_pool";
 import { QrScanner } from "../../../components/qr-scanner";
+import { SettleVendorButton } from "../../../components/settle-vendor-button";
 import { useCluster } from "../../../components/cluster-context";
 import { useWallet } from "../../../lib/wallet/context";
 import { useBalance } from "../../../lib/hooks/use-balance";
@@ -41,6 +44,14 @@ import {
   createPayerSender,
   programErrorCode,
   REJECT_COPY,
+  DELIVERY_REJECT_COPY,
+  decideDelivery,
+  sponsorshipErrorMessage,
+  sponsorshipStatusLabel,
+  useEventSponsorships,
+  useVendorKeys,
+  type CachedSponsorship,
+  type DeliveryRejectReason,
   type RejectReason,
   type TicketCache,
 } from "../../../lib/event-pool";
@@ -57,7 +68,12 @@ type Result =
   | { kind: "ok"; member: string }
   | { kind: "reject"; reason: RejectReason; member?: string }
   | { kind: "error"; message: string; member: string }
-  | { kind: "queued"; member: string };
+  | { kind: "queued"; member: string }
+  | { kind: "delivery_ok"; vendor: string; amount: bigint }
+  | { kind: "delivery_reject"; reason: DeliveryRejectReason; vendor?: string }
+  | { kind: "delivery_error"; vendor: string; message: string };
+
+type Mode = "tickets" | "delivery";
 
 type QueueItem = { member: string; error: string; attempts: number };
 
@@ -103,11 +119,36 @@ export function Scanner({ pda }: { pda: string }) {
   const [rejectCount, setRejectCount] = useState(0);
   const [cacheSize, setCacheSize] = useState<number | null>(null);
   const [cacheError, setCacheError] = useState<string | null>(null);
+  const [mode, setMode] = useState<Mode>("tickets");
+  const { sponsorships, mutate: refreshSponsorships } = useEventSponsorships(
+    pda,
+    CACHE_REFRESH_MS
+  );
+  const { vendorKeys, mutate: refreshVendorKeys } = useVendorKeys(
+    (sponsorships ?? []).map((s) => s.data.vendor)
+  );
+  const sponsorshipsRef = useRef<ReadonlyMap<string, CachedSponsorship>>(
+    new Map()
+  );
+  const vendorKeysRef = useRef<ReadonlyMap<string, string>>(new Map());
+  const deliveredLocally = useRef<Set<string>>(new Set());
 
   const cacheRef = useRef<TicketCache>(new Map());
   const localCheckedIn = useRef<Set<string>>(new Set());
   const clearTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const eventAddr = state ? (pda as Address) : undefined;
+
+  useEffect(() => {
+    sponsorshipsRef.current = new Map(
+      (sponsorships ?? []).map((s) => [
+        s.data.vendor as string,
+        { address: s.address, status: s.data.status, amount: s.data.amount },
+      ])
+    );
+  }, [sponsorships]);
+  useEffect(() => {
+    vendorKeysRef.current = vendorKeys ?? new Map();
+  }, [vendorKeys]);
 
   // Signer for the gate key (no wallet popup).
   useEffect(() => {
@@ -259,6 +300,90 @@ export function Scanner({ pda }: { pda: string }) {
     [eventAddr, sendAsGate, refreshCache, show, settle]
   );
 
+  /** Verify a vendor delivery QR, then confirm_delivery as the gate. */
+  const onDeliveryScan = useCallback(
+    async (text: string) => {
+      if (!eventAddr || !sendAsGate || !signer) return;
+      const decide = () =>
+        decideDelivery({
+          text,
+          event: eventAddr,
+          sponsorships: sponsorshipsRef.current,
+          vendorKeys: vendorKeysRef.current,
+          now: nowSecs(),
+          deliveredLocally: deliveredLocally.current,
+        });
+      let decision = decide();
+      if (
+        decision.kind === "reject" &&
+        (decision.reason === "no_sponsorship" ||
+          decision.reason === "no_vendor_profile" ||
+          decision.reason === "not_approved")
+      ) {
+        // Cache miss: the sponsorship may have been approved since the last refresh.
+        const fresh = await refreshSponsorships();
+        if (fresh) {
+          sponsorshipsRef.current = new Map(
+            fresh.map((s) => [
+              s.data.vendor as string,
+              {
+                address: s.address,
+                status: s.data.status,
+                amount: s.data.amount,
+              },
+            ])
+          );
+        }
+        const keys = await refreshVendorKeys();
+        if (keys) vendorKeysRef.current = keys;
+        decision = decide();
+      }
+      if (decision.kind === "reject") {
+        setRejectCount((n) => n + 1);
+        show({
+          kind: "delivery_reject",
+          reason: decision.reason,
+          vendor: decision.vendor,
+        });
+        return;
+      }
+      deliveredLocally.current.add(decision.vendor);
+      try {
+        await sendAsGate([
+          getConfirmDeliveryInstruction({
+            gate: signer,
+            event: eventAddr,
+            sponsorship: decision.sponsorship,
+          }),
+        ]);
+        setOkCount((n) => n + 1);
+        show({
+          kind: "delivery_ok",
+          vendor: decision.vendor,
+          amount: decision.amount,
+        });
+        void refreshSponsorships();
+      } catch (err) {
+        // Allow a re-scan: nothing was confirmed.
+        deliveredLocally.current.delete(decision.vendor);
+        setRejectCount((n) => n + 1);
+        show({
+          kind: "delivery_error",
+          vendor: decision.vendor,
+          message: sponsorshipErrorMessage(err),
+        });
+      }
+    },
+    [
+      eventAddr,
+      sendAsGate,
+      signer,
+      show,
+      refreshSponsorships,
+      refreshVendorKeys,
+    ]
+  );
+
   const retryOne = useCallback(
     async (member: string) => {
       try {
@@ -399,14 +524,14 @@ export function Scanner({ pda }: { pda: string }) {
       />
     );
   }
-  if (state.status !== EventStatus.Open) {
+  if (state.status === EventStatus.Cancelled) {
     return (
-      <Notice
-        title="Check-in is closed"
-        body="This event has ended or was cancelled."
-      />
+      <Notice title="Scanner is closed" body="This event was cancelled." />
     );
   }
+  // After the event ends only vendor deliveries can still be confirmed.
+  const eventEnded = state.status === EventStatus.Ended;
+  const activeMode: Mode = eventEnded ? "delivery" : mode;
 
   const authorized = gateKey?.publicKey === state.gateAuthority;
   const funded = gateBalance !== null && gateBalance >= GATE_LOW_LAMPORTS;
@@ -487,15 +612,64 @@ export function Scanner({ pda }: { pda: string }) {
       </Card>
 
       <Card>
-        <h2 className="text-sm font-semibold">2. Scan tickets</h2>
-        {beforeWindow && (
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="text-sm font-semibold">
+            2.{" "}
+            {activeMode === "tickets" ? "Scan tickets" : "Scan vendor passes"}
+          </h2>
+          <div
+            role="group"
+            aria-label="Scan mode"
+            className="flex rounded-lg border border-border p-0.5 text-xs font-medium"
+          >
+            {(
+              [
+                ["tickets", "Tickets"],
+                ["delivery", "Vendors"],
+              ] as const
+            ).map(([value, label]) => (
+              <button
+                key={value}
+                type="button"
+                aria-pressed={activeMode === value}
+                disabled={eventEnded && value === "tickets"}
+                onClick={() => setMode(value)}
+                className={`cursor-pointer rounded-md px-3 py-1.5 disabled:cursor-not-allowed disabled:opacity-50 ${
+                  activeMode === value
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted"
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+        {eventEnded && (
+          <p className="mt-1 text-xs text-muted">
+            The event has ended: ticket check-in is closed, vendor delivery can
+            still be confirmed.
+          </p>
+        )}
+        {activeMode === "delivery" && !eventEnded && (
+          <p className="mt-1 text-xs text-muted">
+            Scan the QR on a vendor&apos;s pass when they deliver. It is checked
+            against their registered key, then delivery is confirmed on-chain.
+          </p>
+        )}
+        {beforeWindow && activeMode === "tickets" && (
           <p className="mt-1 text-xs text-muted">
             Check-in opens an hour before the start; scans before then will be
             refused by the program.
           </p>
         )}
         <div className="relative mt-4">
-          <QrScanner onScan={(t) => void onScan(t)} paused={!ready} />
+          <QrScanner
+            onScan={(t) =>
+              void (activeMode === "delivery" ? onDeliveryScan(t) : onScan(t))
+            }
+            paused={!ready}
+          />
           {!ready && (
             <div className="absolute inset-0 flex items-center justify-center rounded-2xl bg-card/90 p-6 text-center text-sm text-muted">
               Finish gate setup to start scanning.
@@ -505,7 +679,10 @@ export function Scanner({ pda }: { pda: string }) {
         </div>
 
         <dl className="mt-4 grid grid-cols-3 gap-2 text-center">
-          <Counter label="Checked in" value={okCount} />
+          <Counter
+            label={activeMode === "delivery" ? "Confirmed" : "Checked in"}
+            value={okCount}
+          />
           <Counter label="Rejected" value={rejectCount} />
           <Counter
             label="On-chain"
@@ -519,6 +696,52 @@ export function Scanner({ pda }: { pda: string }) {
           {cacheError ? ` Last refresh failed: ${cacheError}` : ""}
         </p>
       </Card>
+
+      {(activeMode === "delivery" || eventEnded) && (
+        <Card>
+          <h2 className="text-sm font-semibold">Vendor deliveries</h2>
+          <p className="mt-1 text-xs text-muted">
+            {eventEnded
+              ? "The event has ended: anyone can now settle delivered sponsorships and the vendor is paid from the vault."
+              : "Delivered sponsorships can be settled by anyone once you end the event."}
+          </p>
+          {(sponsorships ?? []).filter(
+            (s) => s.data.status !== SponsorshipStatus.Rejected
+          ).length === 0 ? (
+            <p className="mt-3 text-sm text-muted">
+              No approved sponsorships yet.
+            </p>
+          ) : (
+            <ul className="mt-3 divide-y divide-border-low">
+              {(sponsorships ?? [])
+                .filter((s) => s.data.status !== SponsorshipStatus.Rejected)
+                .map((s) => (
+                  <li
+                    key={s.address}
+                    className="flex items-center justify-between gap-3 py-2 text-xs"
+                  >
+                    <div className="min-w-0">
+                      <p className="font-mono">{ellipsify(s.data.vendor, 6)}</p>
+                      <p className="text-muted">
+                        {formatSol(s.data.amount, 6)} SOL &middot;{" "}
+                        {sponsorshipStatusLabel(s.data.status)}
+                      </p>
+                    </div>
+                    {s.data.status === SponsorshipStatus.Delivered && (
+                      <SettleVendorButton
+                        event={pda}
+                        sponsorship={s.address}
+                        vendor={s.data.vendor}
+                        eventEnded={eventEnded}
+                        onDone={() => refreshSponsorships()}
+                      />
+                    )}
+                  </li>
+                ))}
+            </ul>
+          )}
+        </Card>
+      )}
 
       {queue.length > 0 && (
         <Card>
@@ -602,6 +825,22 @@ function ResultOverlay({ result }: { result: Result }) {
       title = REJECT_COPY[result.reason].title;
       detail = REJECT_COPY[result.reason].hint;
       member = result.member;
+      break;
+    case "delivery_ok":
+      tone = "bg-green-600";
+      title = "Delivery confirmed";
+      detail = `${formatSol(result.amount, 6)} SOL is payable to the vendor once the event has ended.`;
+      member = result.vendor;
+      break;
+    case "delivery_reject":
+      title = DELIVERY_REJECT_COPY[result.reason].title;
+      detail = DELIVERY_REJECT_COPY[result.reason].hint;
+      member = result.vendor;
+      break;
+    case "delivery_error":
+      title = "Delivery not confirmed";
+      detail = result.message;
+      member = result.vendor;
       break;
   }
 

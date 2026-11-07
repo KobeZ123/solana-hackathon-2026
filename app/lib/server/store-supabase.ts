@@ -1,4 +1,11 @@
-import type { AttendanceRow, NonceRecord, Store, StoredEvent } from "./store";
+import type {
+  AttendanceRow,
+  NonceRecord,
+  Store,
+  StoredEvent,
+  StoredOffer,
+  StoredVendor,
+} from "./store";
 
 type Row = Record<string, unknown>;
 
@@ -125,6 +132,84 @@ export class SupabaseStore implements Store {
       checkedInAt: (r.checked_in_at as string | null) ?? null,
     }));
   }
+
+  async upsertVendor(v: StoredVendor): Promise<void> {
+    await this.rest("vendors", "?on_conflict=wallet", {
+      method: "POST",
+      prefer: "resolution=merge-duplicates,return=minimal",
+      body: {
+        wallet: v.wallet,
+        name: v.name,
+        logo_url: v.logoUrl,
+        description: v.description,
+        updated_at: v.updatedAt,
+      },
+    });
+  }
+
+  async getVendor(wallet: string): Promise<StoredVendor | null> {
+    const { rows } = await this.rest(
+      "vendors",
+      `?wallet=eq.${encodeURIComponent(wallet)}&limit=1`
+    );
+    const r = rows[0];
+    return r
+      ? {
+          wallet: r.wallet as string,
+          name: r.name as string,
+          logoUrl: (r.logo_url as string | null) ?? null,
+          description: (r.description as string | null) ?? "",
+          updatedAt: r.updated_at as string,
+        }
+      : null;
+  }
+
+  async upsertOffer(o: StoredOffer): Promise<void> {
+    await this.rest(
+      "sponsorship_offers",
+      "?on_conflict=event_pda,vendor_wallet",
+      {
+        method: "POST",
+        prefer: "resolution=merge-duplicates,return=minimal",
+        body: {
+          event_pda: o.eventPda,
+          vendor_wallet: o.vendorWallet,
+          text: o.text,
+          offer_hash: o.offerHash,
+          updated_at: o.updatedAt,
+        },
+      }
+    );
+  }
+
+  async getOffer(
+    eventPda: string,
+    vendorWallet: string
+  ): Promise<StoredOffer | null> {
+    const { rows } = await this.rest(
+      "sponsorship_offers",
+      `?event_pda=eq.${encodeURIComponent(eventPda)}&vendor_wallet=eq.${encodeURIComponent(vendorWallet)}&limit=1`
+    );
+    return rows[0] ? toOffer(rows[0]) : null;
+  }
+
+  async listOffers(eventPda: string): Promise<StoredOffer[]> {
+    const { rows } = await this.rest(
+      "sponsorship_offers",
+      `?event_pda=eq.${encodeURIComponent(eventPda)}`
+    );
+    return rows.map(toOffer);
+  }
+}
+
+function toOffer(r: Row): StoredOffer {
+  return {
+    eventPda: r.event_pda as string,
+    vendorWallet: r.vendor_wallet as string,
+    text: r.text as string,
+    offerHash: r.offer_hash as string,
+    updatedAt: r.updated_at as string,
+  };
 }
 
 function toEvent(r: Row): StoredEvent {

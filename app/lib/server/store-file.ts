@@ -1,14 +1,29 @@
 import { promises as fs } from "node:fs";
 import path from "node:path";
-import type { AttendanceRow, NonceRecord, Store, StoredEvent } from "./store";
+import type {
+  AttendanceRow,
+  NonceRecord,
+  Store,
+  StoredEvent,
+  StoredOffer,
+  StoredVendor,
+} from "./store";
 
 interface Data {
   nonces: Record<string, NonceRecord>;
   events: Record<string, StoredEvent>;
   attendance: Record<string, AttendanceRow>;
+  vendors: Record<string, StoredVendor>;
+  offers: Record<string, StoredOffer>;
 }
 
-const empty = (): Data => ({ nonces: {}, events: {}, attendance: {} });
+const empty = (): Data => ({
+  nonces: {},
+  events: {},
+  attendance: {},
+  vendors: {},
+  offers: {},
+});
 
 /** JSON-file store for local dev and tests. Operations are serialized in-process. */
 export class FileStore implements Store {
@@ -93,5 +108,38 @@ export class FileStore implements Store {
 
   listAttendance(): Promise<AttendanceRow[]> {
     return this.tx((d) => Object.values(d.attendance), false);
+  }
+
+  upsertVendor(vendor: StoredVendor): Promise<void> {
+    return this.tx((d) => {
+      d.vendors[vendor.wallet] = vendor;
+    }, true);
+  }
+
+  getVendor(wallet: string): Promise<StoredVendor | null> {
+    return this.tx((d) => d.vendors[wallet] ?? null, false);
+  }
+
+  upsertOffer(offer: StoredOffer): Promise<void> {
+    return this.tx((d) => {
+      d.offers[`${offer.eventPda}:${offer.vendorWallet}`] = offer;
+    }, true);
+  }
+
+  getOffer(
+    eventPda: string,
+    vendorWallet: string
+  ): Promise<StoredOffer | null> {
+    return this.tx(
+      (d) => d.offers[`${eventPda}:${vendorWallet}`] ?? null,
+      false
+    );
+  }
+
+  listOffers(eventPda: string): Promise<StoredOffer[]> {
+    return this.tx(
+      (d) => Object.values(d.offers).filter((o) => o.eventPda === eventPda),
+      false
+    );
   }
 }

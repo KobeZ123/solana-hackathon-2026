@@ -16,6 +16,7 @@ import { useWallet } from "../../../lib/wallet/context";
 import { useSendTransaction } from "../../../lib/hooks/use-send-transaction";
 import { parseTransactionError } from "../../../lib/errors";
 import { ellipsify } from "../../../lib/explorer";
+import { SponsorshipInbox } from "./sponsorship-inbox";
 import {
   bpsToPercent,
   computePayout,
@@ -328,6 +329,16 @@ export function HostDashboard({ pda }: { pda: string }) {
           </Link>
         </div>
       </section>
+
+      <SponsorshipInbox
+        pda={pda}
+        event={event}
+        pool={pool}
+        signer={signer}
+        onChanged={async () => {
+          await Promise.all([mutateEvent(), mutatePool()]);
+        }}
+      />
 
       <section className="rounded-2xl border border-border-low bg-card p-5">
         <h2 className="text-sm font-semibold">

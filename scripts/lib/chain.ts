@@ -116,10 +116,15 @@ export async function send(
   try {
     await submit(false);
   } catch (e) {
-    const cause = (e as { cause?: { data?: { logs?: string[] } } }).cause;
-    const logs = cause?.data?.logs
-      ?.filter((l) => /error|failed/i.test(l))
-      .join(" | ");
+    // kit puts the simulation logs on `context` and the transaction error on `cause`
+    const ctx = (e as { context?: { logs?: string[] } }).context;
+    const cause = (e as { cause?: { context?: { code?: number } } }).cause;
+    const logs = [
+      ...(ctx?.logs?.filter((l) => /error|failed/i.test(l)) ?? []),
+      ...(cause?.context?.code !== undefined
+        ? [`custom program error ${cause.context.code}`]
+        : []),
+    ].join(" | ");
     throw new Error(
       `send failed: ${(e as Error).message}${logs ? ` [${logs}]` : ""}`
     );

@@ -5,6 +5,18 @@
  * To add a scenario, write an async function and append it to SCENARIOS.
  */
 import {
+  getApproveSponsorshipInstructionAsync,
+  getConfirmDeliveryInstruction,
+  getProposeSponsorshipInstructionAsync,
+  getRegisterVendorInstructionAsync,
+  getRejectSponsorshipInstruction,
+  getReleaseSponsorshipInstructionAsync,
+  getSettleVendorInstructionAsync,
+  SponsorshipStatus,
+  fetchSponsorship,
+  fetchVendorProfile,
+  findSponsorshipPda,
+  findVendorProfilePda,
   getCancelEventInstruction,
   getCheckInInstructionAsync,
   getClaimInstructionAsync,
@@ -22,10 +34,14 @@ import {
   findTicketPda,
   findVaultPda,
 } from "../app/generated/event_pool";
+import { offerHashBytes, offerHashHex } from "../app/lib/offer";
 import {
   createCheckinPayload,
+  createDeliveryPayload,
   generateTicketKey,
+  generateVendorKey,
   verifyCheckinPayload,
+  verifyDeliveryPayload,
 } from "../app/lib/qr";
 import {
   chainNow,
@@ -365,9 +381,404 @@ async function cancelRefund() {
   });
 }
 
+type Vendor = {
+  signer: KeyPairSigner;
+  key: ReturnType<typeof generateVendorKey>;
+  sponsorship: Address;
+};
+
+/** register_vendor + propose_sponsorship (offer hash from the shared offer lib). */
+async function registerAndPropose(
+  event: Address,
+  amount: bigint,
+  text: string
+): Promise<Vendor> {
+  const signer = await fundedSigner(2n);
+  const key = generateVendorKey();
+  await send(signer, [
+    await getRegisterVendorInstructionAsync({
+      vendor: signer,
+      vendorKey: key.publicKey as Address,
+    }),
+  ]);
+  await send(signer, [
+    await getProposeSponsorshipInstructionAsync({
+      vendor: signer,
+      event,
+      amount,
+      offerHash: await offerHashBytes(text),
+    }),
+  ]);
+  const [sponsorship] = await findSponsorshipPda({
+    event,
+    vendor: signer.address,
+  });
+  return { signer, key, sponsorship };
+}
+
+const sponsorshipOf = async (v: Vendor) =>
+  (await fetchSponsorship(rpc, v.sponsorship, { commitment: "confirmed" }))
+    .data;
+const eventOf = async (event: Address) =>
+  (await fetchEvent(rpc, event, { commitment: "confirmed" })).data;
+
+async function vendorFlow() {
+  const rent = await rentMinimum(0n);
+  const host = await fundedSigner(5n);
+  const now = await chainNow();
+  const endTs = now + 3 + 22;
+  const { event, vault } = await createEvent(host, {
+    startTs: now + 3,
+    endTs,
+  });
+  const eventStr = event as string;
+
+  const members: Member[] = [];
+  for (let i = 0; i < 3; i++) members.push(await joinMember(event));
+  const gate = await fundedSigner(1n);
+  await send(host, [
+    getSetGateInstruction({ host, event, gate: gate.address }),
+  ]);
+  for (const m of members.slice(0, 2)) {
+    await send(gate, [
+      await getCheckInInstructionAsync({
+        gate,
+        event,
+        member: m.signer.address,
+      }),
+    ]);
+  }
+
+  // Vendor registers; the VendorProfile holds the QR key
+  const text = "50 tacos for the crowd";
+  const AMOUNT = 6_000_000n;
+  const vendor = await registerAndPropose(event, AMOUNT, text);
+  const profile = (
+    await fetchVendorProfile(
+      rpc,
+      (await findVendorProfilePda({ vendor: vendor.signer.address }))[0],
+      { commitment: "confirmed" }
+    )
+  ).data;
+  checkEq(
+    "VendorProfile.vendor_key stored",
+    profile.vendorKey,
+    vendor.key.publicKey
+  );
+  let sp = await sponsorshipOf(vendor);
+  checkEq("sponsorship Proposed", sp.status, SponsorshipStatus.Proposed);
+  checkEq("sponsorship amount", sp.amount, AMOUNT);
+  checkEq(
+    "on-chain offer_hash equals the lib's offerHashHex",
+    Buffer.from(sp.offerHash).toString("hex"),
+    await offerHashHex(text)
+  );
+
+  // Approval is host-only and capped by the host's share of the pool
+  await checkRejects("non-host cannot approve", async () =>
+    send(vendor.signer, [
+      await getApproveSponsorshipInstructionAsync({
+        host: vendor.signer,
+        event,
+        sponsorship: vendor.sponsorship,
+      }),
+    ])
+  );
+  const pool = 3n * ENTRY_FEE;
+  const cap = (pool * BigInt(10_000 - PAYOUT_BPS)) / 10_000n;
+  const big = await registerAndPropose(event, cap, "everything");
+  await send(host, [
+    await getApproveSponsorshipInstructionAsync({
+      host,
+      event,
+      sponsorship: vendor.sponsorship,
+    }),
+  ]);
+  checkEq(
+    "approved_sponsor_total == amount",
+    (await eventOf(event)).approvedSponsorTotal,
+    AMOUNT
+  );
+  await checkRejects(
+    "approval beyond host budget cap fails (SponsorshipBudgetExceeded 6018)",
+    async () =>
+      send(host, [
+        await getApproveSponsorshipInstructionAsync({
+          host,
+          event,
+          sponsorship: big.sponsorship,
+        }),
+      ]),
+    /custom program error 6018|SponsorshipBudgetExceeded/
+  );
+  await send(host, [
+    getRejectSponsorshipInstruction({
+      host,
+      event,
+      sponsorship: big.sponsorship,
+    }),
+  ]);
+  checkEq(
+    "over-cap sponsorship Rejected",
+    (await sponsorshipOf(big)).status,
+    SponsorshipStatus.Rejected
+  );
+  checkEq(
+    "rejecting does not change approved_sponsor_total",
+    (await eventOf(event)).approvedSponsorTotal,
+    AMOUNT
+  );
+
+  // Vendor QR (delivery:) verified against the on-chain vendor_key, then confirm_delivery
+  const qr = createDeliveryPayload({
+    event: eventStr,
+    vendor: vendor.signer.address,
+    secretKey: vendor.key.secretKey,
+  });
+  const verdict = verifyDeliveryPayload(qr, profile.vendorKey, {
+    event: eventStr,
+    vendor: vendor.signer.address,
+  });
+  check(
+    "fresh delivery QR verifies against VendorProfile.vendor_key",
+    verdict.ok
+  );
+  check(
+    "delivery QR signed by another key rejected",
+    !verifyDeliveryPayload(
+      createDeliveryPayload({
+        event: eventStr,
+        vendor: vendor.signer.address,
+        secretKey: generateVendorKey().secretKey,
+      }),
+      profile.vendorKey
+    ).ok
+  );
+  check(
+    "stale delivery QR rejected",
+    !verifyDeliveryPayload(
+      createDeliveryPayload({
+        event: eventStr,
+        vendor: vendor.signer.address,
+        secretKey: vendor.key.secretKey,
+        ts: isoSecs() - 120,
+      }),
+      profile.vendorKey
+    ).ok
+  );
+  await checkRejects(
+    "host (no longer the gate) cannot confirm delivery",
+    async () =>
+      send(host, [
+        getConfirmDeliveryInstruction({
+          gate: host,
+          event,
+          sponsorship: vendor.sponsorship,
+        }),
+      ])
+  );
+  await checkRejects(
+    "confirm_delivery on a Rejected sponsorship fails",
+    async () =>
+      send(gate, [
+        getConfirmDeliveryInstruction({
+          gate,
+          event,
+          sponsorship: big.sponsorship,
+        }),
+      ])
+  );
+  await send(gate, [
+    getConfirmDeliveryInstruction({
+      gate,
+      event,
+      sponsorship: vendor.sponsorship,
+    }),
+  ]);
+  sp = await sponsorshipOf(vendor);
+  checkEq("sponsorship Delivered", sp.status, SponsorshipStatus.Delivered);
+
+  const settle = async (payer: KeyPairSigner, v: Vendor) =>
+    send(payer, [
+      await getSettleVendorInstructionAsync({
+        payer,
+        event,
+        sponsorship: v.sponsorship,
+        vendor: v.signer.address,
+      }),
+    ]);
+  await checkRejects("settle_vendor before the event ended fails", () =>
+    settle(members[2].signer, vendor)
+  );
+
+  console.log(`  ...waiting for validator clock to pass end_ts (${endTs})`);
+  await waitUntilChainPast(endTs);
+  await send(host, [await getEndEventInstructionAsync({ host, event })]);
+  const ev = await eventOf(event);
+  const attendeePool = (pool * BigInt(PAYOUT_BPS)) / 10_000n;
+  const hostBudget = pool - attendeePool;
+  checkEq(
+    "attendee_pool unaffected by sponsorship",
+    ev.attendeePool,
+    attendeePool
+  );
+  checkEq("host_budget unaffected by sponsorship", ev.hostBudget, hostBudget);
+
+  await checkRejects("settle of a Rejected sponsorship fails", () =>
+    settle(members[2].signer, big)
+  );
+  // Anyone can settle: a random attendee pays the fee, the vendor receives exactly amount
+  const vBefore = await getBalance(vendor.signer.address);
+  const payer = members[2].signer;
+  const pBefore = await getBalance(payer.address);
+  await settle(payer, vendor);
+  checkEq(
+    "vendor receives exactly the sponsorship amount",
+    (await getBalance(vendor.signer.address)) - vBefore,
+    AMOUNT
+  );
+  checkEq(
+    "settle payer only pays the tx fee",
+    pBefore - (await getBalance(payer.address)),
+    SIGNATURE_FEE
+  );
+  checkEq(
+    "sponsorship Paid",
+    (await sponsorshipOf(vendor)).status,
+    SponsorshipStatus.Paid
+  );
+  await checkRejects("double settle rejected", () => settle(payer, vendor));
+
+  // Attendee pool is untouched: exact shares
+  const share = attendeePool / 2n;
+  const dust = attendeePool - share * 2n;
+  for (const m of members.slice(0, 2)) {
+    const before = await getBalance(m.signer.address);
+    await send(m.signer, [
+      await getClaimInstructionAsync({ member: m.signer, event }),
+    ]);
+    checkEq(
+      "claim pays the full share despite the vendor payout",
+      (await getBalance(m.signer.address)) - before,
+      share - SIGNATURE_FEE
+    );
+  }
+  const hBefore = await getBalance(host.address);
+  await send(host, [await getWithdrawHostInstructionAsync({ host, event })]);
+  checkEq(
+    "host withdraw = host_budget - sponsor total + dust",
+    (await getBalance(host.address)) - hBefore,
+    hostBudget - AMOUNT + dust - SIGNATURE_FEE
+  );
+  checkEq("vault ends at rent minimum", await getBalance(vault), rent);
+}
+
+async function vendorRelease() {
+  const rent = await rentMinimum(0n);
+  const host = await fundedSigner(5n);
+  const now = await chainNow();
+  const endTs = now + 3 + 20;
+  const { event, vault } = await createEvent(host, {
+    startTs: now + 3,
+    endTs,
+  });
+  const members = [await joinMember(event), await joinMember(event)];
+  await send(host, [
+    await getCheckInInstructionAsync({
+      gate: host,
+      event,
+      member: members[0].signer.address,
+    }),
+  ]);
+  const A = await registerAndPropose(event, 3_000_000n, "A");
+  const B = await registerAndPropose(event, 2_000_000n, "B");
+  const C = await registerAndPropose(event, 1_000_000n, "C (never approved)");
+  for (const v of [A, B]) {
+    await send(host, [
+      await getApproveSponsorshipInstructionAsync({
+        host,
+        event,
+        sponsorship: v.sponsorship,
+      }),
+    ]);
+  }
+  checkEq(
+    "approved_sponsor_total == 5_000_000",
+    (await eventOf(event)).approvedSponsorTotal,
+    5_000_000n
+  );
+  const release = async (v: Vendor) =>
+    send(host, [
+      await getReleaseSponsorshipInstructionAsync({
+        host,
+        event,
+        sponsorship: v.sponsorship,
+      }),
+    ]);
+  await checkRejects("release before the event ended fails", () => release(A));
+
+  await waitUntilChainPast(endTs);
+  await send(host, [await getEndEventInstructionAsync({ host, event })]);
+  const pool = 2n * ENTRY_FEE;
+  const attendeePool = (pool * BigInt(PAYOUT_BPS)) / 10_000n;
+  const hostBudget = pool - attendeePool;
+  const ev = await eventOf(event);
+  checkEq("attendee_pool as expected", ev.attendeePool, attendeePool);
+
+  await checkRejects("release of a Proposed sponsorship fails", () =>
+    release(C)
+  );
+  let hb = await getBalance(host.address);
+  await release(A);
+  checkEq(
+    "release before withdraw moves no lamports (only tx fee)",
+    hb - (await getBalance(host.address)),
+    SIGNATURE_FEE
+  );
+  checkEq(
+    "released sponsorship is Rejected",
+    (await sponsorshipOf(A)).status,
+    SponsorshipStatus.Rejected
+  );
+  checkEq(
+    "approved_sponsor_total decremented",
+    (await eventOf(event)).approvedSponsorTotal,
+    2_000_000n
+  );
+  await checkRejects("double release fails", () => release(A));
+
+  hb = await getBalance(host.address);
+  await send(host, [await getWithdrawHostInstructionAsync({ host, event })]);
+  checkEq(
+    "withdraw keeps the remaining reservation in the vault",
+    (await getBalance(host.address)) - hb,
+    hostBudget - 2_000_000n - SIGNATURE_FEE
+  );
+  // Release after withdraw pays the freed amount out immediately
+  hb = await getBalance(host.address);
+  await release(B);
+  checkEq(
+    "release after withdraw pays the reservation to the host",
+    (await getBalance(host.address)) - hb,
+    2_000_000n - SIGNATURE_FEE
+  );
+  const before = await getBalance(members[0].signer.address);
+  await send(members[0].signer, [
+    await getClaimInstructionAsync({ member: members[0].signer, event }),
+  ]);
+  checkEq(
+    "sole checked-in member claims the whole attendee pool",
+    (await getBalance(members[0].signer.address)) - before,
+    attendeePool - SIGNATURE_FEE
+  );
+  checkEq("vault ends at rent minimum", await getBalance(vault), rent);
+}
+
 export const SCENARIOS: Scenario[] = [
   { name: "lifecycle", run: lifecycle },
   { name: "cancel-refund", run: cancelRefund },
+  { name: "vendor", run: vendorFlow },
+  { name: "vendor-release", run: vendorRelease },
 ];
 
 warmUp()
