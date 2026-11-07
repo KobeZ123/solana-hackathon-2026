@@ -5,8 +5,15 @@ import useSWR from "swr";
 import type { Lamports } from "@solana/kit";
 import { lamportsToSolString } from "../lib/lamports";
 import { parseEventList, type EventListItem } from "../lib/event-summary";
+import { apiFetch } from "../lib/api-client";
+import { useAuth } from "../lib/hooks/use-auth";
 
-async function fetchEvents(): Promise<EventListItem[]> {
+/** Signed in: your feed (public + network events from your 1-hop circle); else public events. */
+async function fetchEvents(signedIn: boolean): Promise<EventListItem[]> {
+  if (signedIn) {
+    const feed = await apiFetch("/api/feed");
+    if (feed.ok) return parseEventList(await feed.json());
+  }
   const res = await fetch("/api/events");
   if (!res.ok) throw new Error(`Events request failed (${res.status})`);
   return parseEventList(await res.json());
@@ -40,6 +47,12 @@ function EventCard({ event }: { event: EventListItem }) {
         href={`/events/${event.pda}`}
         className="flex h-full flex-col gap-2 rounded-2xl border border-border-low bg-card p-4 transition hover:border-border hover:bg-cream"
       >
+        {event.via && (
+          <span className="w-fit rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary">
+            From your network · via {event.via.title ?? "a shared event"}
+            {event.via.strong ? " (strong tie)" : ""}
+          </span>
+        )}
         <h3 className="text-base font-semibold leading-snug">{event.title}</h3>
         {event.summary && (
           <p className="line-clamp-2 text-sm text-foreground/60">
@@ -69,10 +82,12 @@ function Skeleton() {
 
 /** Public event list for the home page, with loading, empty and error states. */
 export function EventList() {
-  const { data, error, isLoading, mutate } = useSWR("events", fetchEvents, {
-    revalidateOnFocus: false,
-    shouldRetryOnError: false,
-  });
+  const { isAuthenticated } = useAuth();
+  const { data, error, isLoading, mutate } = useSWR(
+    ["events", isAuthenticated],
+    ([, signedIn]) => fetchEvents(signedIn),
+    { revalidateOnFocus: false, shouldRetryOnError: false }
+  );
 
   if (isLoading) return <Skeleton />;
 

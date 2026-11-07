@@ -10,6 +10,7 @@ import {
   type Ticket,
 } from "../../generated/event_pool";
 import { useCluster } from "../../components/cluster-context";
+import { useAuth } from "../hooks/use-auth";
 import { useSolanaClient } from "../solana-client-context";
 import { fetchEventSummary, type ApiEventSummary } from "./api";
 import { deriveVaultAddress } from "./pda";
@@ -36,8 +37,10 @@ export function useEvent(pda: string | undefined, refreshMs = 10_000) {
 
 /** Off-chain summary from `GET /api/events/[pda]` (`null` when the API has no record). */
 export function useEventSummary(pda: string | undefined) {
+  // Network-only events are 404 for viewers outside the host's circle, so refetch on sign-in.
+  const { isAuthenticated } = useAuth();
   const { data, error, isLoading, mutate } = useSWR(
-    pda ? (["event-summary", pda] as const) : null,
+    pda ? (["event-summary", pda, isAuthenticated] as const) : null,
     ([, address]) => fetchEventSummary(address),
     { revalidateOnFocus: false }
   );

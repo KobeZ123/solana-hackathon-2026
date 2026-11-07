@@ -384,7 +384,7 @@ export function CreateEventForm() {
       <Field
         label="Visibility"
         htmlFor="visibility"
-        hint="Network-only events arrive with the discovery feature."
+        hint="Network only: shown in the feed and openable only by people who share an event with you. Details stay ticket-gated either way."
       >
         <select
           id="visibility"
@@ -395,9 +395,7 @@ export function CreateEventForm() {
           }
         >
           <option value="public">Public</option>
-          <option value="network" disabled>
-            Network only (coming soon)
-          </option>
+          <option value="network">Network only</option>
         </select>
       </Field>
 
