@@ -47,7 +47,7 @@ npm run dev
 
 ## Decisions worth knowing
 - A malicious host can check in wallets they control and take the attendee share; the split is fixed on-chain and visible but collusion is not prevented. Host stake/reputation is the natural next step.
-- On-chain attendance is public; what is gated is event *details* (server-checked ticket ownership) and the in-app *feed*.
+- On-chain attendance is public. The server checks ticket ownership before releasing event details, and the in-app feed applies network visibility rules. Event details have no per-ticket-holder encryption.
 - `settle_vendor` requires the event to be Ended; `approve_sponsorship` requires Open; cancelled events never pay vendors, so refunds are always fully funded.
 - The ticket QR is signed by an ephemeral ticket key (registered on-chain at join) so there are no wallet popups; the host scanner uses an ephemeral gate key authorized once via `set_gate`.
 - Palette is champagne/titanium on purpose (not purple/Solana-branded); Geist for UI, Instrument Serif for the wordmark only.

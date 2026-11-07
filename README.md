@@ -1,90 +1,31 @@
-## Solana Hackathon 2026
-
-by: Kobe Zheng
-
-This is a project built for the Solana 2026 hackathon: https://www.mlh.com/events/solana-hackathon
-
 # SOLSocial
 
-**Event hosting and community-building, on-chain.** SOLSocial turns every RSVP into a small Solana payment, so hosts know who is really coming, the event is funded before it starts, and the people who show up get rewarded.
+**Host events people show up for.**
 
-## App preview
+SOLSocial is an event-hosting app that turns each RSVP into a small SOL payment. Ticket sales build an event pool, and guests who check in can claim a share after the event.
 
-![SOLSocial event discovery showing Builder Breakfast, After Hours, and Design Review with ticket prices and availability](docs/screenshots/discovery.jpg)
+Imagine hosting a large community event with your guest list, ticketing, and catering payments handled in one place. You can see who has reserved, check guests in with a QR scan, and pay an approved caterer from the same pool after delivery is verified and the event closes.
 
-*Event discovery in the seeded localnet demo. Try it with the [demo data setup](docs/SEED.md).*
+[Open the live demo](https://solana-hackathon-2026.vercel.app/) · [Read the project overview](docs/PROJECT.md)
 
-<details>
-<summary>Landing page and event reservation</summary>
+![SOLSocial event discovery showing sample events with ticket prices and availability](docs/screenshots/discovery.jpg)
 
-![SOLSocial landing page with the champagne design, Host an event and Browse events buttons, and a summary of how ticketing works](docs/screenshots/landing.jpg)
+_Event discovery in the seeded local demo._
 
-![Builder Breakfast reservation page showing the cover, ticket availability, 0.02 SOL entry fee, and 40% attendee payout](docs/screenshots/builder-breakfast.jpg)
+## From RSVP to payout
 
-</details>
+1. **Host an event.** Set the ticket price and the percentage of the pool to share with attendees.
+2. **Build the guest list.** Each paid RSVP reserves a spot and adds SOL to the event pool.
+3. **Check guests in.** Scan a signed QR pass at the door. The pass refreshes every 20 seconds, and the check-in is recorded on Solana.
+4. **Settle after the event.** Guests who checked in can claim equal shares of the attendee allocation. Approved vendors can collect payment from the host’s budget after delivery is verified.
+5. **Find the next event.** Guests can discover events hosted by people they’ve attended events with before.
 
-## How it works
+## What Solana handles
 
-- **Real headcount.** Joining is a payment, so tickets sold means committed guests, not maybes.
-- **Funded up front.** Entry fees pool into an on-chain escrow (a PDA vault), so the host isn't fronting the cost.
-- **Showing up pays.** After the event, a host-chosen share of the pool (10-50%, fixed on-chain) is split equally among guests who checked in.
-- **Fast, fraud-resistant door.** The ticket is a signed QR that refreshes every 20 seconds. The host scans it and the check-in is recorded on-chain.
-- **Vendors get paid automatically**: propose a sponsorship, host approves, scan a delivery QR, get paid from the pool.
-- **Community that compounds**: events can be visible only to people you've attended events with, so showing up widens your circle.
+An Anchor program holds ticket payments in escrow and locks in the payout split at event creation. It records check-ins and enforces attendee and vendor payouts. The app uses shared attendance to surface network-only events in a guest’s feed.
 
-[Project overview and live demo](docs/PROJECT.md) · [Pitch notes and app copy](docs/PITCH.md)
+## Try it
 
-Design: [docs/DESIGN.md](docs/DESIGN.md) · Work breakdown and status: [docs/TICKETS.md](docs/TICKETS.md) · **Handoff / current state: [docs/HANDOFF.md](docs/HANDOFF.md)** · Deploy: [docs/DEPLOY.md](docs/DEPLOY.md) · E2E: [docs/E2E.md](docs/E2E.md)
+Browse the live demo without a wallet. To create an event or reserve a ticket, connect Phantom on **Solana Devnet** and use test SOL. To run the app locally, see the [developer guide](docs/DEVELOPMENT.md).
 
-## Why Solana
-- Per-person payouts, QR check-ins and vendor settlements are many tiny transactions; at fractions of a cent each they are viable, on other chains they are not.
-- Escrow rules live in a program: the host cannot change the payout split, and attendees claim their own share, so there is no trusted middleman holding the pool.
-- Attendance is on-chain proof of presence, which also drives discovery.
-
-## Architecture
-```
-Next.js 16 app (React 19, Tailwind v4)           Anchor program `event_pool`
-  UI pages (member / host / scanner / vendor)  -->   events, tickets, vault PDA, payouts,
-  /api route handlers (auth, events, feed)           vendors, sponsorships
-        |                                             ^
-        +--> Supabase Postgres (or JSON file store)   |
-        +--> RPC (Helius / devnet) ---- Codama-generated @solana/kit client
-```
-- **Program** (`anchor/programs/event_pool`): Anchor 1.1.2, LiteSVM tests.
-- **Client**: `app/generated/event_pool` is generated from the IDL by Codama and committed.
-- **QR tickets**: each member gets an ephemeral ticket key (registered on-chain at join) that signs a QR payload every 20 s with no wallet popups; the scanner verifies the signature locally against the on-chain key. The host's scanner uses an ephemeral *gate key* authorized once via `set_gate`, so checking in 100 people needs no wallet popups either.
-- **Gated details and discovery**: the API checks on-chain ticket ownership before releasing event details, and builds the "mutual events" graph from on-chain tickets.
-
-## Quickstart
-Prereqs: Node 22, Rust, Solana CLI (agave) and Anchor 1.1.2 (`curl --proto '=https' --tlsv1.2 -sSfL https://solana-install.solana.workers.dev | bash`).
-```bash
-source scripts/env.sh          # optional: redirects toolchain caches (see HANDOFF.md)
-npm install
-cp .env.example .env.local     # all optional for local dev
-npm run dev                    # http://localhost:3000
-```
-Connect Phantom set to **Devnet** (Settings > Developer Settings > Testnet Mode). Local dev works without Supabase (JSON-file store) but needs a deployed program on the cluster you use: see [docs/DEPLOY.md](docs/DEPLOY.md), or run against localnet (`solana-test-validator` with the program loaded; select "localnet" in the header).
-
-## Demo data
-`npm run seed` starts a local validator and fills the app with demo events, vendors, claims and a refund, all free. See [docs/SEED.md](docs/SEED.md).
-
-## Tests
-```bash
-cd anchor && ../scripts/with-devhome.sh anchor build --ignore-keys && ../scripts/with-devhome.sh cargo test   # program (LiteSVM)
-npm run test                  # vitest: QR crypto, API, scan/payout logic, UI helpers
-npm run lint && npx tsc --noEmit && npm run build
-npm run e2e                   # real solana-test-validator, Codama client, QR crypto (see docs/E2E.md)
-```
-
-## Demo script (2-3 min)
-1. Host creates "Rooftop Meetup": 0.1 SOL fee, 30% attendee payout.
-2. Two members join from different wallets; the pool balance climbs live. Details unlock after joining.
-3. Door: member shows the rotating QR, host scans it (green check, on-chain tx). A screenshot of an old QR is rejected.
-4. End the event: attendees claim their share, the host withdraws the budget.
-5. Stretch: a vendor proposes a sponsorship, the host approves, a delivery QR is scanned, the vendor is paid from the pool. The network page shows how attending events unlocks more events.
-
-## Known limitations
-- A malicious host can check in wallets they control and take the attendee pool. The payout split is fixed and visible on-chain, but host collusion is not prevented in this version (idea: host stake/reputation).
-- On-chain attendance is public; what is gated is event *details* and the in-app *feed*, not the existence of events on-chain.
-- Event details are access-controlled by the server, not encrypted per ticket holder.
-- See [docs/HANDOFF.md](docs/HANDOFF.md) for what has and has not been verified (no real-wallet browser run yet).
+Built by Kobe Zheng for the [MLH Solana Hackathon](https://www.mlh.com/events/solana-hackathon).
