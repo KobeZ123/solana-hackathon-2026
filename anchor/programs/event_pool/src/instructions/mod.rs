@@ -23,5 +23,16 @@ pub use check_in::*;
 pub mod cancel_event;
 pub mod refund;
 
+// Stretch A
+pub mod approve_sponsorship;
+pub mod propose_sponsorship;
+pub mod register_vendor;
+pub mod reject_sponsorship;
+
+pub use approve_sponsorship::*;
+pub use propose_sponsorship::*;
+pub use register_vendor::*;
+pub use reject_sponsorship::*;
+
 pub use cancel_event::*;
 pub use refund::*;

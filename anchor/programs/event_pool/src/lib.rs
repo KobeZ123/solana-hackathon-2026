@@ -78,4 +78,25 @@ pub mod event_pool {
     pub fn refund(ctx: Context<Refund>) -> Result<()> {
         instructions::refund::handler(ctx)
     }
+
+    // Stretch A: vendors + sponsorships
+    pub fn register_vendor(ctx: Context<RegisterVendor>, vendor_key: Pubkey) -> Result<()> {
+        instructions::register_vendor::handler(ctx, vendor_key)
+    }
+
+    pub fn propose_sponsorship(
+        ctx: Context<ProposeSponsorship>,
+        amount: u64,
+        offer_hash: [u8; 32],
+    ) -> Result<()> {
+        instructions::propose_sponsorship::handler(ctx, amount, offer_hash)
+    }
+
+    pub fn approve_sponsorship(ctx: Context<ApproveSponsorship>) -> Result<()> {
+        instructions::approve_sponsorship::handler(ctx)
+    }
+
+    pub fn reject_sponsorship(ctx: Context<RejectSponsorship>) -> Result<()> {
+        instructions::reject_sponsorship::handler(ctx)
+    }
 }

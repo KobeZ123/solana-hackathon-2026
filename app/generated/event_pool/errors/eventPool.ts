@@ -50,6 +50,12 @@ export const EVENT_POOL_ERROR__ALREADY_CLAIMED = 0x177f; // 6015
 export const EVENT_POOL_ERROR__ALREADY_WITHDRAWN = 0x1780; // 6016
 /** MathOverflow: math overflow */
 export const EVENT_POOL_ERROR__MATH_OVERFLOW = 0x1781; // 6017
+/** SponsorshipBudgetExceeded: sponsorship would exceed the host budget */
+export const EVENT_POOL_ERROR__SPONSORSHIP_BUDGET_EXCEEDED = 0x1782; // 6018
+/** InvalidSponsorshipStatus: sponsorship is not in the required status */
+export const EVENT_POOL_ERROR__INVALID_SPONSORSHIP_STATUS = 0x1783; // 6019
+/** NotVendor: account is not the sponsorship vendor */
+export const EVENT_POOL_ERROR__NOT_VENDOR = 0x1784; // 6020
 
 export type EventPoolError =
   | typeof EVENT_POOL_ERROR__ALREADY_CHECKED_IN
@@ -65,11 +71,14 @@ export type EventPoolError =
   | typeof EVENT_POOL_ERROR__FEE_TOO_LOW
   | typeof EVENT_POOL_ERROR__INVALID_CAPACITY
   | typeof EVENT_POOL_ERROR__INVALID_PAYOUT_BPS
+  | typeof EVENT_POOL_ERROR__INVALID_SPONSORSHIP_STATUS
   | typeof EVENT_POOL_ERROR__INVALID_TIME_RANGE
   | typeof EVENT_POOL_ERROR__MATH_OVERFLOW
   | typeof EVENT_POOL_ERROR__NOT_CHECKED_IN
   | typeof EVENT_POOL_ERROR__NOT_GATE_AUTHORITY
-  | typeof EVENT_POOL_ERROR__NOT_HOST;
+  | typeof EVENT_POOL_ERROR__NOT_HOST
+  | typeof EVENT_POOL_ERROR__NOT_VENDOR
+  | typeof EVENT_POOL_ERROR__SPONSORSHIP_BUDGET_EXCEEDED;
 
 let eventPoolErrorMessages: Record<EventPoolError, string> | undefined;
 if (process.env.NODE_ENV !== "production") {
@@ -87,11 +96,14 @@ if (process.env.NODE_ENV !== "production") {
     [EVENT_POOL_ERROR__FEE_TOO_LOW]: `entry fee is below the minimum`,
     [EVENT_POOL_ERROR__INVALID_CAPACITY]: `capacity must be greater than zero`,
     [EVENT_POOL_ERROR__INVALID_PAYOUT_BPS]: `payout_bps must be at most 10000`,
+    [EVENT_POOL_ERROR__INVALID_SPONSORSHIP_STATUS]: `sponsorship is not in the required status`,
     [EVENT_POOL_ERROR__INVALID_TIME_RANGE]: `end_ts must be greater than start_ts`,
     [EVENT_POOL_ERROR__MATH_OVERFLOW]: `math overflow`,
     [EVENT_POOL_ERROR__NOT_CHECKED_IN]: `ticket is not checked in`,
     [EVENT_POOL_ERROR__NOT_GATE_AUTHORITY]: `signer is not the gate authority`,
     [EVENT_POOL_ERROR__NOT_HOST]: `signer is not the event host`,
+    [EVENT_POOL_ERROR__NOT_VENDOR]: `account is not the sponsorship vendor`,
+    [EVENT_POOL_ERROR__SPONSORSHIP_BUDGET_EXCEEDED]: `sponsorship would exceed the host budget`,
   };
 }
 
