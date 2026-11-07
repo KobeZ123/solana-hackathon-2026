@@ -1,7 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { GET as feedRoute } from "../../api/feed/route";
 import { GET as getEventRoute } from "../../api/events/[pda]/route";
-import { POST as refreshRoute } from "../../api/index/refresh/route";
+import {
+  GET as refreshGetRoute,
+  POST as refreshRoute,
+} from "../../api/index/refresh/route";
 import { GET as networkRoute } from "../../api/me/network/route";
 import {
   REFRESH_THROTTLE_MS,
@@ -298,6 +301,15 @@ describe("routes", () => {
     const ok = await call("Bearer s3cret");
     expect(ok.status).toBe(200);
     expect(await ok.json()).toEqual({ indexed: 1 });
+    // Vercel Cron sends GET with the same bearer header.
+    const get = (auth?: string) =>
+      refreshGetRoute(
+        new Request("http://x/api/index/refresh", {
+          headers: auth ? { authorization: auth } : {},
+        })
+      );
+    expect((await get()).status).toBe(401);
+    expect((await get("Bearer s3cret")).status).toBe(200);
   });
 
   it("GET /api/feed, /api/me/network and /api/events/[pda] honour the viewer", async () => {

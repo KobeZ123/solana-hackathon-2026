@@ -13,3 +13,8 @@ export async function POST(request: Request) {
     return errorResponse(err);
   }
 }
+
+/** Vercel Cron issues GET (with `Authorization: Bearer $CRON_SECRET`); same behaviour as POST. */
+export async function GET(request: Request) {
+  return POST(request);
+}
