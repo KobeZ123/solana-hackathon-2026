@@ -101,6 +101,6 @@ solana program deploy "$SO" --url "$RPC_URL" --keypair "$DEPLOYER_KEYPAIR" \
 
 # 7. Verify
 echo "== solana program show"
-solana program show "$GOT_ID" --url "$RPC_URL"
+solana program show "$GOT_ID" --url "$RPC_URL" --keypair "$DEPLOYER_KEYPAIR"
 echo "DEPLOYED program id: $GOT_ID (devnet)"
 echo "Next: npx tsx scripts/smoke-devnet.ts"

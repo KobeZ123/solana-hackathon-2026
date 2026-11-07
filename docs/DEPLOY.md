@@ -40,7 +40,7 @@ serverless (read-only/ephemeral filesystem, separate instances). A hosted deploy
 Provisioning is manual:
 
 1. Create a project at <https://supabase.com> (free tier is fine).
-2. Apply `supabase/migrations/*.sql` in filename order (currently only `0001_init.sql`). Either paste
+2. Apply `supabase/migrations/*.sql` in filename order, including the service-role grants. Either paste
    each file into the SQL editor and run it, or run `supabase link --project-ref <ref>` then
    `supabase db push`.
 3. Settings > API: copy the project URL (`SUPABASE_URL`) and the `service_role` key
