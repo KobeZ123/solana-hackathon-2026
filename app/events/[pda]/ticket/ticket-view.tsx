@@ -64,7 +64,7 @@ export function TicketView({ pda }: { pda: string }) {
 
   const { event } = useEvent(pda);
   const { summary } = useEventSummary(pda);
-  // Polls every 5 s so a check-in at the door flips this screen to green.
+  // Polls every 5 s so the ticket shows confirmation after the host scans it.
   const {
     ticket,
     ticketAddress,
@@ -187,24 +187,26 @@ export function TicketView({ pda }: { pda: string }) {
     body = (
       <div
         role="status"
-        className="rounded-3xl bg-green-600 p-8 text-center text-white"
+        className="rounded-3xl border border-champagne/25 bg-card p-8 text-center"
       >
-        <div aria-hidden className="text-6xl">
+        <div
+          aria-hidden
+          className="mx-auto flex size-16 items-center justify-center rounded-full border border-champagne/25 bg-champagne/10 text-3xl text-champagne"
+        >
           &#10003;
         </div>
         <h2 className="mt-3 text-2xl font-bold">You are checked in</h2>
         {ticket.checkedInAt > 0n && (
-          <p className="mt-1 text-sm opacity-90">
+          <p className="mt-1 text-sm text-muted">
             {formatTimestamp(ticket.checkedInAt)}
           </p>
         )}
-        <p className="mt-3 text-sm opacity-90">
-          Enjoy the event. If you check in you can claim your share of the pool
-          after it ends.
+        <p className="mt-3 text-sm text-muted">
+          Enjoy the event. You can claim your share of the pool after it ends.
         </p>
         <Link
           href={`/events/${pda}/claim`}
-          className="mt-5 inline-flex h-11 items-center rounded-xl bg-white px-5 text-sm font-medium text-green-700"
+          className="button-metal mt-5 inline-flex h-11 items-center rounded-full px-5 text-sm font-semibold"
         >
           Claim page
         </Link>

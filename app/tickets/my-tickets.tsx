@@ -1,13 +1,20 @@
 "use client";
 
 import Link from "next/link";
+import {
+  EventCard,
+  eventCardStatus,
+  useEventClock,
+} from "../components/event-card";
+import type { Event, Ticket } from "../generated/event_pool";
 import { useWallet } from "../lib/wallet/context";
 import { ellipsify } from "../lib/explorer";
+import { parseEventList } from "../lib/event-summary";
 import {
   eventStatusLabel,
   formatSol,
-  formatTimestamp,
   memberView,
+  useEventSummary,
   useEventsByAddress,
   useMemberTickets,
   type MemberView,
@@ -71,8 +78,63 @@ function Empty({ title, body }: { title: string; body: string }) {
   );
 }
 
+function MyTicketCard({
+  ticket,
+  event,
+  now,
+}: {
+  ticket: Ticket;
+  event?: Event | null;
+  now: number;
+}) {
+  const pda = ticket.event;
+  const { summary, isLoading } = useEventSummary(pda);
+  const [listing] = parseEventList([
+    {
+      ...summary,
+      eventPda: pda,
+      title:
+        summary?.title ??
+        (isLoading ? "Loading event…" : `Event ${ellipsify(pda, 6)}`),
+      onchain: event
+        ? {
+            startTs: Number(event.startTs),
+            endTs: Number(event.endTs),
+            status: eventStatusLabel(event.status).toLowerCase(),
+            entryFee: event.entryFee,
+            capacity: event.capacity,
+            ticketsSold: event.ticketsSold,
+          }
+        : summary?.onchain,
+    },
+  ]);
+  const action = cta(pda, event ? memberView(event, ticket) : null);
+
+  return (
+    <li className="rounded-2xl border border-border-low bg-card">
+      <EventCard event={listing} label={eventCardStatus(listing, now)} />
+      <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3">
+        <p className="text-xs text-muted">
+          {ticket.checkedIn ? "Checked in" : "Ticket reserved"}
+        </p>
+        <Link
+          href={action.href}
+          className={`shrink-0 rounded-xl px-3 py-2 text-xs font-medium ${
+            action.strong
+              ? "bg-primary text-primary-foreground"
+              : "border border-border hover:bg-cream"
+          }`}
+        >
+          {action.label}
+        </Link>
+      </div>
+    </li>
+  );
+}
+
 export function MyTickets() {
   const { wallet } = useWallet();
+  const now = useEventClock();
   const member = wallet?.account.address;
   const { tickets, isLoading, error } = useMemberTickets(member);
   const { events } = useEventsByAddress(
@@ -119,44 +181,16 @@ export function MyTickets() {
 
   return (
     <Shell>
+      <h2 className="sr-only">Your events</h2>
       <ul className="space-y-3">
-        {tickets.map((t) => {
-          const pda = t.data.event;
-          const event = events?.get(pda);
-          const view = event ? memberView(event, t.data) : null;
-          const action = cta(pda, view);
-          return (
-            <li
-              key={t.address}
-              className="flex items-center justify-between gap-3 rounded-2xl border border-border-low bg-card p-4"
-            >
-              <div className="min-w-0">
-                <Link
-                  href={`/events/${pda}`}
-                  className="font-mono text-sm underline-offset-4 hover:underline"
-                >
-                  {ellipsify(pda, 6)}
-                </Link>
-                <p className="mt-0.5 text-xs text-muted">
-                  {event
-                    ? `${eventStatusLabel(event.status)} · ${formatTimestamp(event.startTs)}`
-                    : "Loading event..."}
-                  {t.data.checkedIn ? " · Checked in" : ""}
-                </p>
-              </div>
-              <Link
-                href={action.href}
-                className={`shrink-0 rounded-xl px-3 py-2 text-xs font-medium ${
-                  action.strong
-                    ? "bg-primary text-primary-foreground"
-                    : "border border-border hover:bg-cream"
-                }`}
-              >
-                {action.label}
-              </Link>
-            </li>
-          );
-        })}
+        {tickets.map((t) => (
+          <MyTicketCard
+            key={t.address}
+            ticket={t.data}
+            event={events?.get(t.data.event)}
+            now={now}
+          />
+        ))}
       </ul>
     </Shell>
   );
