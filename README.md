@@ -32,7 +32,7 @@ This is a project built for the Solana 2026 hackathon: https://www.mlh.com/event
 - **Vendors get paid automatically**: propose a sponsorship, host approves, scan a delivery QR, get paid from the pool.
 - **Community that compounds**: events can be visible only to people you've attended events with, so showing up widens your circle.
 
-Pitch, talking points and app copy: [docs/PITCH.md](docs/PITCH.md)
+[Project overview and live demo](docs/PROJECT.md) · [Pitch notes and app copy](docs/PITCH.md)
 
 Design: [docs/DESIGN.md](docs/DESIGN.md) · Work breakdown and status: [docs/TICKETS.md](docs/TICKETS.md) · **Handoff / current state: [docs/HANDOFF.md](docs/HANDOFF.md)** · Deploy: [docs/DEPLOY.md](docs/DEPLOY.md) · E2E: [docs/E2E.md](docs/E2E.md)
 
