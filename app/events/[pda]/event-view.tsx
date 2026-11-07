@@ -11,13 +11,25 @@ import { useBalance } from "../../lib/hooks/use-balance";
 import { useSendTransaction } from "../../lib/hooks/use-send-transaction";
 import { parseTransactionError } from "../../lib/errors";
 import { ellipsify } from "../../lib/explorer";
+import { EventHero } from "../../components/event-hero";
+import {
+  ArrowRightIcon,
+  CalendarIcon,
+  GiftIcon,
+  HostIcon,
+  LockIcon,
+  MapPinIcon,
+  PoolIcon,
+  TicketIcon,
+} from "../../components/icons";
 import { generateTicketKey, saveTicketKey } from "../../lib/qr";
 import {
   deriveVaultAddress,
   eventPhase,
+  fillPercent,
+  formatEventWhen,
   eventStatusLabel,
   formatSol,
-  formatTimestamp,
   joinBlocker,
   useEvent,
   useEventSummary,
@@ -30,19 +42,86 @@ import { ProposeSponsorship } from "./propose-sponsorship";
 /** Ticket account rent + a little for fees, on top of the entry fee. */
 const JOIN_OVERHEAD_LAMPORTS = 3_000_000n;
 
-function Stat({ label, value }: { label: string; value: string }) {
+type Tone = "lavender" | "mint" | "neutral" | "danger";
+
+const toneClass: Record<Tone, string> = {
+  lavender: "bg-lavender/15 text-lavender",
+  mint: "bg-mint/15 text-mint",
+  neutral: "bg-white/10 text-foreground/80",
+  danger: "bg-destructive/15 text-destructive",
+};
+
+function Pill({
+  tone,
+  dot,
+  children,
+}: {
+  tone: Tone;
+  dot?: boolean;
+  children: React.ReactNode;
+}) {
   return (
-    <div className="rounded-xl border border-border-low bg-card p-3">
-      <dt className="text-xs text-muted">{label}</dt>
-      <dd className="mt-0.5 text-sm font-semibold">{value}</dd>
-    </div>
+    <span
+      className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium backdrop-blur ${toneClass[tone]}`}
+    >
+      {dot && <span className="size-1.5 rounded-full bg-current" />}
+      {children}
+    </span>
   );
 }
 
-const primaryBtn =
-  "flex h-12 w-full items-center justify-center rounded-xl bg-primary text-sm font-medium text-primary-foreground disabled:opacity-60";
-const secondaryBtn =
-  "flex h-12 items-center justify-center rounded-xl border border-border bg-card px-4 text-sm font-medium transition hover:bg-cream";
+/** One fact about the event: a quiet icon beside a two-line label (no box per value). */
+function Fact({
+  icon,
+  title,
+  sub,
+  children,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  sub?: string;
+  children?: React.ReactNode;
+}) {
+  return (
+    <li className="flex items-start gap-3.5">
+      <span className="mt-0.5 text-foreground/45">{icon}</span>
+      <div className="min-w-0 flex-1">
+        <p className="text-[15px] leading-snug font-medium">{title}</p>
+        {sub && <p className="mt-0.5 text-sm text-foreground/50">{sub}</p>}
+        {children}
+      </div>
+    </li>
+  );
+}
+
+/** The money, in one quiet strip instead of a grid of cards. */
+function MoneyStrip({
+  items,
+}: {
+  items: { icon: React.ReactNode; label: string; value: string }[];
+}) {
+  return (
+    <dl className="grid grid-cols-3 divide-x divide-border-low rounded-2xl bg-elevated/50 ring-1 ring-border-low">
+      {items.map((it) => (
+        <div key={it.label} className="min-w-0 px-3 py-4 sm:px-5">
+          <dt className="flex items-center gap-1.5 text-xs text-muted">
+            <span className="text-foreground/40 [&>svg]:size-4">{it.icon}</span>
+            {it.label}
+          </dt>
+          <dd className="mt-1.5 truncate text-[15px] font-semibold">
+            {it.value}
+          </dd>
+        </div>
+      ))}
+    </dl>
+  );
+}
+
+/** Fully rounded lavender call to action. */
+const ctaBtn =
+  "group relative flex h-14 w-full items-center justify-center rounded-full bg-gradient-to-r from-[#e6dbf9] to-lavender px-12 text-[15px] font-semibold text-[#09090b] shadow-[0_8px_30px_-10px_rgba(191,165,237,0.6)] transition hover:-translate-y-px hover:shadow-[0_12px_34px_-8px_rgba(191,165,237,0.7)] disabled:translate-y-0 disabled:opacity-55 disabled:shadow-none";
+const ghostBtn =
+  "flex h-12 items-center justify-center rounded-full border border-border bg-surface px-5 text-sm font-medium transition hover:-translate-y-px hover:bg-elevated";
 
 export function EventView({ pda }: { pda: string }) {
   const { cluster, getExplorerUrl } = useCluster();
@@ -144,38 +223,51 @@ export function EventView({ pda }: { pda: string }) {
     action = <p className="text-sm text-muted">Connecting wallet...</p>;
   } else if (!wallet) {
     action = (
-      <p className="rounded-xl border border-border-low bg-card p-4 text-sm text-foreground/60">
-        Connect a wallet (top right) to join this event.
+      <p className="flex items-center gap-2.5 rounded-full border border-border-low bg-elevated/50 px-5 py-3.5 text-sm text-foreground/70">
+        <LockIcon className="size-4 shrink-0 text-lavender" />
+        Connect a wallet to join this event.
       </p>
     );
   } else if (isHost) {
     action = (
       <div className="grid grid-cols-2 gap-2">
-        <Link href={`/events/${pda}/host`} className={secondaryBtn}>
+        <Link href={`/events/${pda}/host`} className={ctaBtn}>
           Host dashboard
         </Link>
-        <Link href={`/events/${pda}/scan`} className={secondaryBtn}>
+        <Link href={`/events/${pda}/scan`} className={ghostBtn}>
           Scanner
         </Link>
       </div>
     );
   } else if (hasTicket) {
     action = (
-      <div className="grid grid-cols-2 gap-2">
-        <Link href={`/events/${pda}/ticket`} className={primaryBtn}>
+      <div className="grid grid-cols-[1.4fr_1fr] gap-2">
+        <Link href={`/events/${pda}/ticket`} className={ctaBtn}>
           View ticket
         </Link>
-        <Link href={`/events/${pda}/claim`} className={secondaryBtn}>
+        <Link href={`/events/${pda}/claim`} className={ghostBtn}>
           Claim / refund
         </Link>
       </div>
     );
   } else if (blocker === "sold_out") {
-    action = <p className="text-sm font-medium">Sold out</p>;
+    action = (
+      <p className="rounded-full bg-elevated/60 px-5 py-3.5 text-center text-sm font-medium text-foreground/70">
+        Sold out
+      </p>
+    );
   } else if (blocker === "cancelled") {
-    action = <p className="text-sm font-medium">This event was cancelled.</p>;
+    action = (
+      <p className="rounded-full bg-destructive/10 px-5 py-3.5 text-center text-sm font-medium text-destructive">
+        This event was cancelled.
+      </p>
+    );
   } else if (blocker === "ended") {
-    action = <p className="text-sm font-medium">This event has ended.</p>;
+    action = (
+      <p className="rounded-full bg-elevated/60 px-5 py-3.5 text-center text-sm font-medium text-foreground/70">
+        This event has ended.
+      </p>
+    );
   } else {
     action = (
       <div className="space-y-2">
@@ -183,11 +275,14 @@ export function EventView({ pda }: { pda: string }) {
           type="button"
           onClick={() => void join()}
           disabled={joining || ticket === undefined || insufficient}
-          className={primaryBtn}
+          className={ctaBtn}
         >
           {joining
             ? "Confirm in your wallet..."
-            : `Join for ${formatSol(event.entryFee)} SOL`}
+            : `Reserve your place · ${formatSol(event.entryFee)} SOL`}
+          {!joining && (
+            <ArrowRightIcon className="absolute right-5 size-5 transition group-hover:translate-x-0.5" />
+          )}
         </button>
         {insufficient && (
           <p className="text-xs text-muted">
@@ -218,65 +313,115 @@ export function EventView({ pda }: { pda: string }) {
     );
   }
 
+  const when = formatEventWhen(event.startTs, event.endTs);
+  const left = Math.max(0, event.capacity - event.ticketsSold);
+  const filled = fillPercent(event.ticketsSold, event.capacity);
+  const unlocked = isHost || hasTicket;
+  const badge: { tone: Tone; label: string; dot?: boolean } =
+    eventStatusLabel(event.status) === "Cancelled"
+      ? { tone: "danger", label: "Cancelled" }
+      : phase === "over" || eventStatusLabel(event.status) === "Ended"
+        ? { tone: "neutral", label: "Ended" }
+        : phase === "live"
+          ? { tone: "mint", label: "Live now", dot: true }
+          : { tone: "lavender", label: "Upcoming" };
+
   return (
-    <div className="mx-auto w-full max-w-xl space-y-5">
-      {summary?.coverUrl && (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={summary.coverUrl}
-          alt=""
-          className="aspect-[2/1] w-full rounded-2xl object-cover"
-        />
-      )}
-      <div>
-        <div className="flex items-center gap-2 text-xs text-muted">
-          <span className="rounded-full border border-border px-2 py-0.5">
-            {eventStatusLabel(event.status)}
-          </span>
-          <span>
-            {phase === "upcoming"
-              ? "Upcoming"
-              : phase === "live"
-                ? "Happening now"
-                : "Over"}
-          </span>
+    <div className="mx-auto w-full max-w-2xl space-y-5">
+      <article className="overflow-hidden rounded-3xl border border-border-low bg-surface">
+        <EventHero seed={pda} coverUrl={summary?.coverUrl}>
+          <Pill tone={badge.tone} dot={badge.dot}>
+            {badge.label}
+          </Pill>
+        </EventHero>
+
+        <div className="space-y-6 p-5 pt-3 sm:p-7 sm:pt-4">
+          <header>
+            <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
+              {title}
+            </h1>
+            {summary?.summary && (
+              <p className="mt-2.5 max-w-prose text-[15px] leading-relaxed text-foreground/60">
+                {summary.summary}
+              </p>
+            )}
+            {summary === null && (
+              <p className="mt-2 text-xs text-muted">
+                No title or description is registered for this event.
+              </p>
+            )}
+          </header>
+
+          <ul className="space-y-4">
+            <Fact icon={<CalendarIcon />} title={when.date} sub={when.time} />
+            <Fact
+              icon={unlocked ? <MapPinIcon /> : <LockIcon />}
+              title={unlocked ? "Location unlocked" : "Location after you join"}
+              sub={
+                unlocked
+                  ? "See the full details below"
+                  : "Exact address is shared with guests only"
+              }
+            />
+            <Fact
+              icon={<TicketIcon />}
+              title={
+                left === 0
+                  ? "Sold out"
+                  : `${left} of ${event.capacity} spots left`
+              }
+              sub={
+                event.checkedIn > 0
+                  ? `${event.ticketsSold} joined · ${event.checkedIn} checked in`
+                  : `${event.ticketsSold} joined`
+              }
+            >
+              <div
+                role="progressbar"
+                aria-valuenow={filled}
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-label="Spots taken"
+                className="mt-2.5 h-1 w-full max-w-xs overflow-hidden rounded-full bg-white/10"
+              >
+                <div
+                  className="h-full rounded-full bg-lavender transition-[width] duration-700"
+                  style={{ width: `${filled}%` }}
+                />
+              </div>
+            </Fact>
+          </ul>
+
+          {action}
+
+          <div className="space-y-2.5">
+            <MoneyStrip
+              items={[
+                {
+                  icon: <PoolIcon />,
+                  label: "Pool",
+                  value:
+                    pool === undefined ? "..." : `${formatSol(pool, 4)} SOL`,
+                },
+                {
+                  icon: <GiftIcon />,
+                  label: "Attendee payout",
+                  value: `${event.payoutBps / 100}% of pool`,
+                },
+                {
+                  icon: <HostIcon />,
+                  label: "Host",
+                  value: ellipsify(event.host),
+                },
+              ]}
+            />
+            <p className="px-1 text-xs text-muted">
+              The pool funds the event and pays guests who show up. Entry{" "}
+              {formatSol(event.entryFee)} SOL.
+            </p>
+          </div>
         </div>
-        <h1 className="mt-2 text-2xl font-bold tracking-tight sm:text-3xl">
-          {title}
-        </h1>
-        {summary?.summary && (
-          <p className="mt-2 text-sm leading-relaxed text-foreground/60">
-            {summary.summary}
-          </p>
-        )}
-        {summary === null && (
-          <p className="mt-2 text-xs text-muted">
-            No title or description is registered for this event.
-          </p>
-        )}
-      </div>
-
-      <dl className="grid grid-cols-2 gap-2">
-        <Stat label="Entry fee" value={`${formatSol(event.entryFee)} SOL`} />
-        <Stat
-          label="Tickets"
-          value={`${event.ticketsSold} / ${event.capacity}`}
-        />
-        <Stat label="Starts" value={formatTimestamp(event.startTs)} />
-        <Stat label="Ends" value={formatTimestamp(event.endTs)} />
-        <Stat
-          label="Pool"
-          value={pool === undefined ? "..." : `${formatSol(pool, 4)} SOL`}
-        />
-        <Stat label="Checked in" value={String(event.checkedIn)} />
-        <Stat
-          label="Attendee payout"
-          value={`${event.payoutBps / 100}% of pool`}
-        />
-        <Stat label="Host" value={ellipsify(event.host)} />
-      </dl>
-
-      {action}
+      </article>
 
       {member && !isHost && (
         <ProposeSponsorship pda={pda} event={event} vendor={member} />
@@ -285,7 +430,7 @@ export function EventView({ pda }: { pda: string }) {
       {keyWarning && (
         <p
           role="alert"
-          className="rounded-xl border border-destructive p-3 text-sm text-destructive"
+          className="rounded-2xl border border-destructive/50 bg-destructive/10 p-4 text-sm text-destructive"
         >
           Your browser blocked storage, so your ticket secret could not be
           saved. Your ticket exists on-chain, but you will need to use Recover
@@ -298,7 +443,7 @@ export function EventView({ pda }: { pda: string }) {
         <EventDetails pda={pda} wallet={member} />
       )}
       {!isHost && !hasTicket && (
-        <p className="text-xs text-muted">
+        <p className="px-1 text-xs text-muted">
           Location and details unlock after you join.
         </p>
       )}

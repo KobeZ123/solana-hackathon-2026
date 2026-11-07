@@ -3,8 +3,8 @@
 import {
   createContext,
   useContext,
-  useState,
   useCallback,
+  useSyncExternalStore,
   type ReactNode,
 } from "react";
 import type { ClusterMoniker } from "../lib/solana-client";
@@ -20,11 +20,26 @@ type ClusterContextValue = {
 const ClusterContext = createContext<ClusterContextValue | null>(null);
 
 const STORAGE_KEY = "solana-cluster";
-function getInitialCluster(): ClusterMoniker {
-  if (typeof window === "undefined") return "devnet";
-  const stored = localStorage.getItem(STORAGE_KEY);
-  if (stored && CLUSTERS.includes(stored as ClusterMoniker)) {
-    return stored as ClusterMoniker;
+
+const listeners = new Set<() => void>();
+
+function subscribe(onChange: () => void) {
+  listeners.add(onChange);
+  window.addEventListener("storage", onChange);
+  return () => {
+    listeners.delete(onChange);
+    window.removeEventListener("storage", onChange);
+  };
+}
+
+function readCluster(): ClusterMoniker {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored && CLUSTERS.includes(stored as ClusterMoniker)) {
+      return stored as ClusterMoniker;
+    }
+  } catch {
+    // storage blocked: fall back to the default
   }
   return "devnet";
 }
@@ -32,12 +47,21 @@ function getInitialCluster(): ClusterMoniker {
 export { CLUSTERS };
 
 export function ClusterProvider({ children }: { children: ReactNode }) {
-  const [cluster, setClusterState] =
-    useState<ClusterMoniker>(getInitialCluster);
+  // The server (and the first client render) use "devnet"; the saved choice is applied right
+  // after hydration, so a saved non-default cluster no longer causes a hydration mismatch.
+  const cluster = useSyncExternalStore<ClusterMoniker>(
+    subscribe,
+    readCluster,
+    () => "devnet"
+  );
 
   const setCluster = useCallback((c: ClusterMoniker) => {
-    setClusterState(c);
-    localStorage.setItem(STORAGE_KEY, c);
+    try {
+      localStorage.setItem(STORAGE_KEY, c);
+    } catch {
+      // storage blocked: the choice just won't persist
+    }
+    listeners.forEach((l) => l());
   }, []);
 
   const explorerUrl = useCallback(

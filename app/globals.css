@@ -23,34 +23,45 @@
   --destructive-foreground: #ef4444;
   --ring: #a3a3a3;
   --radius: 0.625rem;
+  --canvas: #ffffff;
+  --surface: #f7f7f8;
+  --elevated: #efeff1;
+  --lavender: #7c5cc4;
+  --mint: #2f7d4b;
   --secondary: #f5f5f5;
   --secondary-foreground: #171717;
-  --font-sans: var(--font-inter), system-ui, sans-serif;
+  --font-sans: var(--font-geist-sans), system-ui, sans-serif;
   --font-mono: var(--font-geist-mono), ui-monospace, monospace;
 }
 
 .dark {
-  --background: #0a0a0a;
-  --foreground: #fafafa;
-  --primary: #fafafa;
-  --primary-foreground: #171717;
-  --muted: #a3a3a3;
-  --muted-foreground: #737373;
-  --card: #171717;
-  --card-foreground: #fafafa;
-  --popover: #171717;
-  --popover-foreground: #fafafa;
-  --border: #262626;
-  --border-low: rgba(38, 38, 38, 0.5);
-  --input: #262626;
-  --accent: #262626;
-  --accent-foreground: #fafafa;
-  --cream: #262626;
-  --destructive: #ef4444;
-  --destructive-foreground: #ef4444;
-  --ring: #525252;
-  --secondary: #262626;
-  --secondary-foreground: #fafafa;
+  /* After Dark V2: see docs/DESIGN_SYSTEM.md */
+  --canvas: #09090b;
+  --surface: #17171b;
+  --elevated: #232127;
+  --lavender: #bfa5ed;
+  --mint: #a5d3b2;
+  --background: var(--canvas);
+  --foreground: #f4f4f5;
+  --primary: var(--lavender);
+  --primary-foreground: #09090b;
+  --muted: #a1a1aa;
+  --muted-foreground: #8b8b93;
+  --card: var(--surface);
+  --card-foreground: #f4f4f5;
+  --popover: var(--elevated);
+  --popover-foreground: #f4f4f5;
+  --border: rgba(255, 255, 255, 0.1);
+  --border-low: rgba(255, 255, 255, 0.06);
+  --input: rgba(255, 255, 255, 0.12);
+  --accent: var(--elevated);
+  --accent-foreground: #f4f4f5;
+  --cream: var(--elevated);
+  --destructive: #f87171;
+  --destructive-foreground: #f87171;
+  --ring: var(--lavender);
+  --secondary: var(--elevated);
+  --secondary-foreground: #f4f4f5;
 }
 
 @theme inline {
@@ -80,6 +91,11 @@
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
+  --color-canvas: var(--canvas);
+  --color-surface: var(--surface);
+  --color-elevated: var(--elevated);
+  --color-lavender: var(--lavender);
+  --color-mint: var(--mint);
 }
 
 @layer base {

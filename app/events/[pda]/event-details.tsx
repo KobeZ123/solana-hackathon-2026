@@ -5,6 +5,7 @@ import useSWR from "swr";
 import { useAuth } from "../../lib/hooks/use-auth";
 import { fetchEventDetails } from "../../lib/event-pool";
 import { ApiError } from "../../lib/api-client";
+import { LockIcon, MapPinIcon } from "../../components/icons";
 
 /** Pull `{ location, description }` out of the stored details; fall back to JSON text. */
 export function readDetails(details: unknown): {
@@ -41,9 +42,12 @@ export function EventDetails({ pda, wallet }: { pda: string; wallet: string }) {
 
   if (!token) {
     return (
-      <div className="rounded-2xl border border-border-low bg-card p-5">
-        <h2 className="text-sm font-semibold">Event details</h2>
-        <p className="mt-1 text-sm text-foreground/60">
+      <div className="rounded-3xl border border-lavender/25 bg-lavender/[0.06] p-5 sm:p-6">
+        <h2 className="flex items-center gap-2 text-sm font-semibold">
+          <LockIcon className="size-4 text-lavender" />
+          Event details
+        </h2>
+        <p className="mt-1.5 text-sm text-foreground/60">
           Location and details are visible to the host and ticket holders. Sign
           in with your wallet to unlock them.
         </p>
@@ -56,7 +60,7 @@ export function EventDetails({ pda, wallet }: { pda: string; wallet: string }) {
               setSignInError(err instanceof Error ? err.message : String(err))
             );
           }}
-          className="mt-3 h-10 rounded-xl bg-primary px-4 text-sm font-medium text-primary-foreground disabled:opacity-60"
+          className="mt-4 h-11 rounded-full bg-primary px-5 text-sm font-semibold text-primary-foreground transition hover:brightness-110 disabled:opacity-60"
         >
           {isSigningIn ? "Waiting for signature..." : "Sign in to view details"}
         </button>
@@ -72,11 +76,13 @@ export function EventDetails({ pda, wallet }: { pda: string; wallet: string }) {
   const shown = data ? readDetails(data.details) : null;
 
   return (
-    <div className="rounded-2xl border border-border-low bg-card p-5">
-      <h2 className="text-sm font-semibold">Event details</h2>
-      {isLoading && <p className="mt-2 text-sm text-muted">Loading...</p>}
+    <section className="rounded-3xl border border-border-low bg-surface p-5 sm:p-6">
+      <h2 className="text-xs font-semibold tracking-wide text-muted uppercase">
+        About this event
+      </h2>
+      {isLoading && <p className="mt-3 text-sm text-muted">Loading...</p>}
       {error && (
-        <p role="alert" className="mt-2 text-sm text-destructive">
+        <p role="alert" className="mt-3 text-sm text-destructive">
           {error instanceof ApiError && error.status === 403
             ? "A ticket for this event is required to see the details."
             : error instanceof Error
@@ -85,24 +91,30 @@ export function EventDetails({ pda, wallet }: { pda: string; wallet: string }) {
         </p>
       )}
       {shown && (
-        <dl className="mt-3 space-y-3 text-sm">
+        <div className="mt-4 space-y-5 text-[15px]">
           {shown.location && (
-            <div>
-              <dt className="text-xs text-muted">Location</dt>
-              <dd className="whitespace-pre-wrap">{shown.location}</dd>
+            <div className="flex items-start gap-3.5">
+              <MapPinIcon className="mt-0.5 shrink-0 text-mint" />
+              <div>
+                <p className="font-medium whitespace-pre-wrap">
+                  {shown.location}
+                </p>
+                <p className="mt-0.5 text-sm text-foreground/50">
+                  Shared with guests only
+                </p>
+              </div>
             </div>
           )}
           {shown.description && (
-            <div>
-              <dt className="text-xs text-muted">Details</dt>
-              <dd className="whitespace-pre-wrap">{shown.description}</dd>
-            </div>
+            <p className="leading-relaxed whitespace-pre-wrap text-foreground/75">
+              {shown.description}
+            </p>
           )}
           {shown.raw && (
             <pre className="overflow-x-auto text-xs">{shown.raw}</pre>
           )}
-        </dl>
+        </div>
       )}
-    </div>
+    </section>
   );
 }

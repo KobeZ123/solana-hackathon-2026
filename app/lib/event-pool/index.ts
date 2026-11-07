@@ -16,3 +16,4 @@ export * from "./vendor";
 export * from "./vendor-api";
 export * from "./vendor-hooks";
 export * from "./vendor-errors";
+export * from "./when";
