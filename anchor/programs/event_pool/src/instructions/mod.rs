@@ -29,6 +29,14 @@ pub mod propose_sponsorship;
 pub mod register_vendor;
 pub mod reject_sponsorship;
 
+pub mod confirm_delivery;
+pub mod release_sponsorship;
+pub mod settle_vendor;
+
+pub use confirm_delivery::*;
+pub use release_sponsorship::*;
+pub use settle_vendor::*;
+
 pub use approve_sponsorship::*;
 pub use propose_sponsorship::*;
 pub use register_vendor::*;

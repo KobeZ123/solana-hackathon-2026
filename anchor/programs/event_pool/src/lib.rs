@@ -99,4 +99,16 @@ pub mod event_pool {
     pub fn reject_sponsorship(ctx: Context<RejectSponsorship>) -> Result<()> {
         instructions::reject_sponsorship::handler(ctx)
     }
+
+    pub fn confirm_delivery(ctx: Context<ConfirmDelivery>) -> Result<()> {
+        instructions::confirm_delivery::handler(ctx)
+    }
+
+    pub fn settle_vendor(ctx: Context<SettleVendor>) -> Result<()> {
+        instructions::settle_vendor::handler(ctx)
+    }
+
+    pub fn release_sponsorship(ctx: Context<ReleaseSponsorship>) -> Result<()> {
+        instructions::release_sponsorship::handler(ctx)
+    }
 }

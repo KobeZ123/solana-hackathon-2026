@@ -21,6 +21,7 @@ import {
   parseCancelEventInstruction,
   parseCheckInInstruction,
   parseClaimInstruction,
+  parseConfirmDeliveryInstruction,
   parseCreateEventInstruction,
   parseEndEventInstruction,
   parseJoinEventInstruction,
@@ -28,13 +29,16 @@ import {
   parseRefundInstruction,
   parseRegisterVendorInstruction,
   parseRejectSponsorshipInstruction,
+  parseReleaseSponsorshipInstruction,
   parseRotateTicketKeyInstruction,
   parseSetGateInstruction,
+  parseSettleVendorInstruction,
   parseWithdrawHostInstruction,
   type ParsedApproveSponsorshipInstruction,
   type ParsedCancelEventInstruction,
   type ParsedCheckInInstruction,
   type ParsedClaimInstruction,
+  type ParsedConfirmDeliveryInstruction,
   type ParsedCreateEventInstruction,
   type ParsedEndEventInstruction,
   type ParsedJoinEventInstruction,
@@ -42,8 +46,10 @@ import {
   type ParsedRefundInstruction,
   type ParsedRegisterVendorInstruction,
   type ParsedRejectSponsorshipInstruction,
+  type ParsedReleaseSponsorshipInstruction,
   type ParsedRotateTicketKeyInstruction,
   type ParsedSetGateInstruction,
+  type ParsedSettleVendorInstruction,
   type ParsedWithdrawHostInstruction,
 } from "../instructions";
 
@@ -115,6 +121,7 @@ export enum EventPoolInstruction {
   CancelEvent,
   CheckIn,
   Claim,
+  ConfirmDelivery,
   CreateEvent,
   EndEvent,
   JoinEvent,
@@ -122,8 +129,10 @@ export enum EventPoolInstruction {
   Refund,
   RegisterVendor,
   RejectSponsorship,
+  ReleaseSponsorship,
   RotateTicketKey,
   SetGate,
+  SettleVendor,
   WithdrawHost,
 }
 
@@ -174,6 +183,17 @@ export function identifyEventPoolInstruction(
     )
   ) {
     return EventPoolInstruction.Claim;
+  }
+  if (
+    containsBytes(
+      data,
+      fixEncoderSize(getBytesEncoder(), 8).encode(
+        new Uint8Array([11, 109, 227, 53, 179, 190, 88, 155]),
+      ),
+      0,
+    )
+  ) {
+    return EventPoolInstruction.ConfirmDelivery;
   }
   if (
     containsBytes(
@@ -256,6 +276,17 @@ export function identifyEventPoolInstruction(
     containsBytes(
       data,
       fixEncoderSize(getBytesEncoder(), 8).encode(
+        new Uint8Array([235, 62, 212, 126, 105, 59, 234, 125]),
+      ),
+      0,
+    )
+  ) {
+    return EventPoolInstruction.ReleaseSponsorship;
+  }
+  if (
+    containsBytes(
+      data,
+      fixEncoderSize(getBytesEncoder(), 8).encode(
         new Uint8Array([0, 197, 73, 196, 233, 18, 84, 77]),
       ),
       0,
@@ -273,6 +304,17 @@ export function identifyEventPoolInstruction(
     )
   ) {
     return EventPoolInstruction.SetGate;
+  }
+  if (
+    containsBytes(
+      data,
+      fixEncoderSize(getBytesEncoder(), 8).encode(
+        new Uint8Array([231, 39, 10, 125, 69, 149, 191, 14]),
+      ),
+      0,
+    )
+  ) {
+    return EventPoolInstruction.SettleVendor;
   }
   if (
     containsBytes(
@@ -306,6 +348,9 @@ export type ParsedEventPoolInstruction<
       instructionType: EventPoolInstruction.Claim;
     } & ParsedClaimInstruction<TProgram>)
   | ({
+      instructionType: EventPoolInstruction.ConfirmDelivery;
+    } & ParsedConfirmDeliveryInstruction<TProgram>)
+  | ({
       instructionType: EventPoolInstruction.CreateEvent;
     } & ParsedCreateEventInstruction<TProgram>)
   | ({
@@ -327,11 +372,17 @@ export type ParsedEventPoolInstruction<
       instructionType: EventPoolInstruction.RejectSponsorship;
     } & ParsedRejectSponsorshipInstruction<TProgram>)
   | ({
+      instructionType: EventPoolInstruction.ReleaseSponsorship;
+    } & ParsedReleaseSponsorshipInstruction<TProgram>)
+  | ({
       instructionType: EventPoolInstruction.RotateTicketKey;
     } & ParsedRotateTicketKeyInstruction<TProgram>)
   | ({
       instructionType: EventPoolInstruction.SetGate;
     } & ParsedSetGateInstruction<TProgram>)
+  | ({
+      instructionType: EventPoolInstruction.SettleVendor;
+    } & ParsedSettleVendorInstruction<TProgram>)
   | ({
       instructionType: EventPoolInstruction.WithdrawHost;
     } & ParsedWithdrawHostInstruction<TProgram>);
@@ -367,6 +418,13 @@ export function parseEventPoolInstruction<TProgram extends string>(
       return {
         instructionType: EventPoolInstruction.Claim,
         ...parseClaimInstruction(instruction),
+      };
+    }
+    case EventPoolInstruction.ConfirmDelivery: {
+      assertIsInstructionWithAccounts(instruction);
+      return {
+        instructionType: EventPoolInstruction.ConfirmDelivery,
+        ...parseConfirmDeliveryInstruction(instruction),
       };
     }
     case EventPoolInstruction.CreateEvent: {
@@ -418,6 +476,13 @@ export function parseEventPoolInstruction<TProgram extends string>(
         ...parseRejectSponsorshipInstruction(instruction),
       };
     }
+    case EventPoolInstruction.ReleaseSponsorship: {
+      assertIsInstructionWithAccounts(instruction);
+      return {
+        instructionType: EventPoolInstruction.ReleaseSponsorship,
+        ...parseReleaseSponsorshipInstruction(instruction),
+      };
+    }
     case EventPoolInstruction.RotateTicketKey: {
       assertIsInstructionWithAccounts(instruction);
       return {
@@ -430,6 +495,13 @@ export function parseEventPoolInstruction<TProgram extends string>(
       return {
         instructionType: EventPoolInstruction.SetGate,
         ...parseSetGateInstruction(instruction),
+      };
+    }
+    case EventPoolInstruction.SettleVendor: {
+      assertIsInstructionWithAccounts(instruction);
+      return {
+        instructionType: EventPoolInstruction.SettleVendor,
+        ...parseSettleVendorInstruction(instruction),
       };
     }
     case EventPoolInstruction.WithdrawHost: {

@@ -84,6 +84,50 @@ pub fn reject_sponsorship_ix(host: &Pubkey, event: &Pubkey, vendor: &Pubkey) -> 
     }
 }
 
+pub fn confirm_delivery_ix(gate: &Pubkey, event: &Pubkey, vendor: &Pubkey) -> Instruction {
+    Instruction {
+        program_id: PROGRAM_ID,
+        accounts: crate::accounts::ConfirmDelivery {
+            gate: *gate,
+            event: *event,
+            sponsorship: sponsor_pda(event, vendor).0,
+        }
+        .to_account_metas(None),
+        data: crate::instruction::ConfirmDelivery {}.data(),
+    }
+}
+
+pub fn settle_vendor_ix(payer: &Pubkey, event: &Pubkey, vendor: &Pubkey) -> Instruction {
+    Instruction {
+        program_id: PROGRAM_ID,
+        accounts: crate::accounts::SettleVendor {
+            payer: *payer,
+            event: *event,
+            sponsorship: sponsor_pda(event, vendor).0,
+            vendor: *vendor,
+            vault: vault_pda(event).0,
+            system_program: system_program::ID,
+        }
+        .to_account_metas(None),
+        data: crate::instruction::SettleVendor {}.data(),
+    }
+}
+
+pub fn release_sponsorship_ix(host: &Pubkey, event: &Pubkey, vendor: &Pubkey) -> Instruction {
+    Instruction {
+        program_id: PROGRAM_ID,
+        accounts: crate::accounts::ReleaseSponsorship {
+            host: *host,
+            event: *event,
+            sponsorship: sponsor_pda(event, vendor).0,
+            vault: vault_pda(event).0,
+            system_program: system_program::ID,
+        }
+        .to_account_metas(None),
+        data: crate::instruction::ReleaseSponsorship {}.data(),
+    }
+}
+
 impl TestEnv {
     pub fn get_vendor(&self, authority: &Pubkey) -> VendorProfile {
         let acc = self.svm.get_account(&vendor_pda(authority).0).unwrap();
