@@ -14,6 +14,9 @@ const eslintConfig = defineConfig([
     "next-env.d.ts",
     // Generated Codama files:
     "app/generated/**",
+    // Agent worktrees and Rust build output:
+    ".claude/**",
+    "anchor/target/**",
   ]),
 ]);
 

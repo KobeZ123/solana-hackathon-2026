@@ -5,3 +5,5 @@ app/generated
 .agents
 agent
 pnpm-workspace.yaml
+.claude
+anchor/target
