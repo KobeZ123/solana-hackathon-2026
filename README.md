@@ -49,6 +49,9 @@ npm run dev                    # http://localhost:3000
 ```
 Connect Phantom set to **Devnet** (Settings > Developer Settings > Testnet Mode). Local dev works without Supabase (JSON-file store) but needs a deployed program on the cluster you use: see [docs/DEPLOY.md](docs/DEPLOY.md), or run against localnet (`solana-test-validator` with the program loaded; select "localnet" in the header).
 
+## Demo data
+`npm run seed` starts a local validator and fills the app with demo events, vendors, claims and a refund, all free. See [docs/SEED.md](docs/SEED.md).
+
 ## Tests
 ```bash
 cd anchor && ../scripts/with-devhome.sh anchor build --ignore-keys && ../scripts/with-devhome.sh cargo test   # program (LiteSVM)
