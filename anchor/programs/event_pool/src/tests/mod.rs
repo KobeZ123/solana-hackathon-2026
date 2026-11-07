@@ -8,4 +8,5 @@ mod join_event;
 mod payouts;
 mod set_gate;
 mod sponsor_helpers;
+mod vendor_settlement;
 mod vendors;
