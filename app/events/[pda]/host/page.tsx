@@ -1,4 +1,4 @@
-import { PageStub } from "../../../components/page-stub";
+import { HostDashboard } from "./host-dashboard";
 
 export const metadata = { title: "Host dashboard | Event Pool" };
 
@@ -8,12 +8,5 @@ export default async function HostPage({
   params: Promise<{ pda: string }>;
 }) {
   const { pda } = await params;
-  return (
-    <PageStub
-      title="Host dashboard"
-      pda={pda}
-      description="Live pool, ticket and check-in counts, plus end, cancel and withdraw actions."
-      ticket="T26"
-    />
-  );
+  return <HostDashboard pda={pda} />;
 }
