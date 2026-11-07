@@ -1,5 +1,10 @@
 import { getAddressEncoder, type Address } from "@solana/kit";
-import { accountDiscriminator, type Chain, type OnChainEvent } from "./chain";
+import {
+  accountDiscriminator,
+  type Chain,
+  type OnChainEvent,
+  type TicketRecord,
+} from "./chain";
 
 /** Test-only helpers for chain access. */
 
@@ -7,6 +12,7 @@ export class FakeChain implements Chain {
   events = new Map<string, OnChainEvent>();
   tickets = new Set<string>(); // `${event}:${member}`
   failRpc = false;
+  listTicketsCalls = 0;
 
   private check() {
     if (this.failRpc) throw new Error("rpc down");
@@ -22,6 +28,22 @@ export class FakeChain implements Chain {
   async ticketExists(event: string, member: string) {
     this.check();
     return this.tickets.has(`${event}:${member}`);
+  }
+  /** Tickets with check-in state (also kept in `tickets` for gating tests). */
+  ticketRecords = new Map<string, TicketRecord>();
+  addTicket(event: string, member: string, checkedIn = false) {
+    this.tickets.add(`${event}:${member}`);
+    this.ticketRecords.set(`${event}:${member}`, {
+      eventPda: event,
+      member,
+      checkedIn,
+      checkedInAt: checkedIn ? 1_800_000_000 : 0,
+    });
+  }
+  async listTickets() {
+    this.listTicketsCalls++;
+    this.check();
+    return [...this.ticketRecords.values()];
   }
 }
 
