@@ -1,4 +1,4 @@
-import { PageStub } from "../../../components/page-stub";
+import { Scanner } from "./scanner";
 
 export const metadata = { title: "Scanner | Event Pool" };
 
@@ -8,12 +8,5 @@ export default async function ScanPage({
   params: Promise<{ pda: string }>;
 }) {
   const { pda } = await params;
-  return (
-    <PageStub
-      title="Scanner"
-      pda={pda}
-      description="Set up your gate key and scan attendee QR codes to check them in."
-      ticket="T25"
-    />
-  );
+  return <Scanner pda={pda} />;
 }
