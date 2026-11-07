@@ -18,22 +18,22 @@ Source of truth for work breakdown. Each `## Txx` section is mirrored as a GitHu
 | T12 | `check_in` | 1b | T10 | #4 | #33 | done |
 | T13 | `end_event`, `claim`, `withdraw_host` | 1b | T10 | #5 | #31 | done |
 | T14 | `cancel_event`, `refund` | 1b | T10 | #6 | #34 | done |
-| T15 | Localnet end-to-end lifecycle script | 2 | T11-T14 | #7 | - | todo |
+| T15 | Localnet end-to-end lifecycle script | 2 | T11-T14 | #7 | #44 | done |
 | T20 | Web shell: replace vault UI, nav, route stubs | 1 | T00 | #8 | #29 | done |
 | T21 | Web libs: QR crypto, ticket keys, api-client/auth | 1 | T00 | #9 | #26 | done |
 | T22 | Create-event page | 2 | T10, T20, T30 | #10 | #30 | done |
 | T23 | Event page: join + gated details | 2 | T11, T20, T21, T31 | #11 | #35 | done |
 | T24 | Ticket page: rotating QR | 2 | T21, T23 | #12 | #36 | done |
-| T25 | Scanner page (gate key, verify, check-in) | 2 | T12, T21 | #13 | - | todo |
-| T26 | Host dashboard | 2 | T13, T14, T20 | #14 | - | todo |
-| T27 | Claim and refund UI | 2 | T13, T14, T20 | #15 | - | todo |
+| T25 | Scanner page (gate key, verify, check-in) | 2 | T12, T21 | #13 | #37 | done |
+| T26 | Host dashboard | 2 | T13, T14, T20 | #14 | #38 | done |
+| T27 | Claim and refund UI | 2 | T13, T14, T20 | #15 | #41 | done |
 | T30 | API: store abstraction + wallet auth | 1 | T00 | #16 | #25 | done |
 | T31 | API: events endpoints + ticket gating | 1 | T30 | #17 | #27 | done |
-| T40 | Stretch A program: vendors + sponsorship proposals | 3 | T13 | #18 | - | todo |
-| T41 | Stretch A program: delivery + settlement | 3 | T40 | #19 | - | todo |
+| T40 | Stretch A program: vendors + sponsorship proposals | 3 | T13 | #18 | #40 | done |
+| T41 | Stretch A program: delivery + settlement | 3 | T40 | #19 | #43 | done |
 | T42 | Stretch A UI: vendor flow | 3 | T41, T25 | #20 | - | todo |
-| T50 | Stretch B API: attendance index + feed | 3 | T31, T12 | #21 | - | todo |
-| T51 | Stretch B UI: feed, network page, visibility | 3 | T50 | #22 | - | todo |
+| T50 | Stretch B API: attendance index + feed | 3 | T31, T12 | #21 | #39 | done |
+| T51 | Stretch B UI: feed, network page, visibility | 3 | T50 | #22 | #42 | done |
 | T60 | Devnet deploy + env + Vercel docs | 3 | all MVP | #23 | - | todo |
 | T61 | README, demo script, final handoff | 3 | all | #24 | - | todo |
 
