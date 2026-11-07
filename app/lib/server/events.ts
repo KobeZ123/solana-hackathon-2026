@@ -1,6 +1,8 @@
 import { isAddress } from "@solana/kit";
 import { metadataHashHex } from "../metadata";
 import type { AuthContext } from "./auth";
+import type { AttendanceDeps } from "./attendance";
+import { canViewEvent, visibleEvents, type SharedEvent } from "./network";
 import { getChain, type Chain, type OnChainEvent } from "./chain";
 import { ApiError } from "./errors";
 import {
@@ -10,7 +12,7 @@ import {
   type Visibility,
 } from "./store";
 
-export interface EventDeps {
+export interface EventDeps extends AttendanceDeps {
   store?: Store;
   chain?: Chain;
   now?: () => number; // unix ms
@@ -39,6 +41,11 @@ export interface EventSummary {
   createdAt: string;
   /** null when the chain could not be read (RPC error). */
   onchain: OnChainSummary | null;
+  /**
+   * Feed only: the shared event connecting the viewer to this event's host
+   * ("from your network"); null when the host is the viewer or not connected.
+   */
+  via?: SharedEvent | null;
 }
 
 function toOnChain(e: OnChainEvent | null): OnChainSummary | null {
@@ -168,24 +175,29 @@ export async function createEvent(
   return toSummary(stored, onchain);
 }
 
-/** GET /api/events: public events (plus the viewer's own network events), newest first. */
+/**
+ * GET /api/events and GET /api/feed: events visible to the viewer (public events, own
+ * events, and `network` events whose host is within 1 hop), newest first. Anonymous
+ * viewers get public events only. `strong` restricts the network part to strong ties.
+ */
 export async function listEvents(
   viewer: AuthContext | null,
-  deps: EventDeps = {}
+  deps: EventDeps = {},
+  opts: { strong?: boolean } = {}
 ): Promise<EventSummary[]> {
-  const store = deps.store ?? getStore();
   const chain = deps.chain ?? getChain();
-  const visible = (await store.listEvents())
-    .filter((e) => e.visibility === "public" || e.hostWallet === viewer?.wallet)
-    .slice(0, 100);
+  const visible = (await visibleEvents(viewer, opts, deps)).slice(0, 100);
   let onchain: (OnChainEvent | null)[];
   try {
-    onchain = await chain.getEvents(visible.map((e) => e.eventPda));
+    onchain = await chain.getEvents(visible.map((v) => v.event.eventPda));
   } catch (err) {
     console.error("RPC error listing events", err);
     onchain = visible.map(() => null);
   }
-  return visible.map((e, i) => toSummary(e, onchain[i]));
+  return visible.map((v, i) => ({
+    ...toSummary(v.event, onchain[i]),
+    via: v.via,
+  }));
 }
 
 /** GET /api/events/[pda]: stored summary merged with on-chain fee/capacity/sold/status. */
@@ -198,11 +210,8 @@ export async function getEventSummary(
   const store = deps.store ?? getStore();
   const chain = deps.chain ?? getChain();
   const stored = await store.getEvent(pda);
-  // Network-visibility events are 404 to anyone but the host until T50 adds the graph check.
-  if (
-    !stored ||
-    (stored.visibility !== "public" && stored.hostWallet !== viewer?.wallet)
-  ) {
+  // `network` events are 404 unless the viewer is the host or within 1 hop of the host.
+  if (!stored || !(await canViewEvent(stored, viewer, deps))) {
     throw new ApiError(404, "Event not found");
   }
   let onchain: OnChainEvent | null = null;

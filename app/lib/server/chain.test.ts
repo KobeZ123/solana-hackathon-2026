@@ -5,6 +5,7 @@ import {
   address,
 } from "@solana/kit";
 import { createHash } from "node:crypto";
+import { getTicketEncoder } from "../../generated/event_pool/accounts/ticket";
 import { PROGRAM_ID } from "../config";
 import {
   AccountChain,
@@ -122,5 +123,48 @@ describe("AccountChain", () => {
       })
     );
     expect(await wrongOwner.ticketExists(event, member)).toBe(false);
+  });
+
+  it("listTickets decodes Ticket accounts with the generated decoder", async () => {
+    const [event, m1, m2, key] = await Promise.all(
+      [1, 2, 3, 4].map(async () => (await makeWallet()).address)
+    );
+    const enc = getTicketEncoder();
+    const mk = (member: string, checkedIn: boolean) =>
+      new Uint8Array(
+        enc.encode({
+          event: address(event),
+          member: address(member),
+          ticketKey: address(key),
+          checkedIn,
+          checkedInAt: checkedIn ? 1_800_000_123n : 0n,
+          claimed: false,
+          bump: 255,
+        })
+      );
+    const chain = new AccountChain(
+      fakeSource({}),
+      PROGRAM_ID,
+      async (_programId, disc) => {
+        expect(Buffer.from(disc).toString("hex")).toBe(
+          Buffer.from(accountDiscriminator("Ticket")).toString("hex")
+        );
+        return [
+          { owner: PROGRAM_ID, data: mk(m1, true) },
+          { owner: PROGRAM_ID, data: mk(m2, false) },
+          { owner: m1, data: mk(m2, true) }, // wrong owner: skipped
+          { owner: PROGRAM_ID, data: new Uint8Array(20) }, // junk: skipped
+        ];
+      }
+    );
+    expect(await chain.listTickets()).toEqual([
+      {
+        eventPda: event,
+        member: m1,
+        checkedIn: true,
+        checkedInAt: 1_800_000_123,
+      },
+      { eventPda: event, member: m2, checkedIn: false, checkedInAt: 0 },
+    ]);
   });
 });

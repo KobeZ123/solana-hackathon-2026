@@ -4,11 +4,13 @@ import {
   createSolanaRpc,
   getAddressDecoder,
   getAddressEncoder,
+  getBase58Decoder,
   getBase64Encoder,
   getProgramDerivedAddress,
   isAddress,
   type Address,
 } from "@solana/kit";
+import { getTicketDecoder } from "../../generated/event_pool/accounts/ticket";
 import { PROGRAM_ID } from "../config";
 import { bytesToHex } from "../metadata";
 
@@ -39,7 +41,18 @@ export interface OnChainEvent {
   approvedSponsorTotal: bigint;
 }
 
+/** A decoded `Ticket` account (the attendance index input). */
+export interface TicketRecord {
+  eventPda: string;
+  member: string;
+  checkedIn: boolean;
+  /** unix seconds; 0 when not checked in */
+  checkedInAt: number;
+}
+
 export interface Chain {
+  /** Every `Ticket` account of the program (`getProgramAccounts`). */
+  listTickets(): Promise<TicketRecord[]>;
   /** Decoded Event account, or null if it does not exist / is not a valid Event. */
   getEvent(eventPda: string): Promise<OnChainEvent | null>;
   /** Batch variant; result array is index-aligned with the input. */
@@ -52,6 +65,12 @@ export interface RawAccount {
   owner: string;
   data: Uint8Array;
 }
+
+/** Fetches all program-owned accounts whose data starts with `discriminator`. */
+export type ProgramAccountSource = (
+  programId: string,
+  discriminator: Uint8Array
+) => Promise<RawAccount[]>;
 
 /** Fetches raw accounts (null for missing), index-aligned with the input addresses. */
 export type AccountSource = (
@@ -151,8 +170,38 @@ export function decodeEventAccount(data: Uint8Array): OnChainEvent | null {
 export class AccountChain implements Chain {
   constructor(
     private readonly source: AccountSource,
-    private readonly programId: string = PROGRAM_ID
+    private readonly programId: string = PROGRAM_ID,
+    private readonly programAccounts?: ProgramAccountSource
   ) {}
+
+  async listTickets(): Promise<TicketRecord[]> {
+    if (!this.programAccounts) {
+      throw new Error("Chain has no program account source configured");
+    }
+    const accounts = await this.programAccounts(this.programId, TICKET_DISC);
+    const decoder = getTicketDecoder();
+    const out: TicketRecord[] = [];
+    for (const acc of accounts) {
+      if (
+        acc.owner !== this.programId ||
+        !hasDiscriminator(acc.data, TICKET_DISC)
+      ) {
+        continue;
+      }
+      try {
+        const t = decoder.decode(acc.data);
+        out.push({
+          eventPda: t.event,
+          member: t.member,
+          checkedIn: t.checkedIn,
+          checkedInAt: t.checkedIn ? Number(t.checkedInAt) : 0,
+        });
+      } catch {
+        /* malformed account: skip */
+      }
+    }
+    return out;
+  }
 
   async getEvents(pdas: string[]): Promise<(OnChainEvent | null)[]> {
     if (pdas.length === 0) return [];
@@ -211,12 +260,41 @@ export function rpcAccountSource(rpcUrl: string): AccountSource {
   };
 }
 
+/** Program account source backed by JSON-RPC `getProgramAccounts` with a memcmp filter. */
+export function rpcProgramAccountSource(rpcUrl: string): ProgramAccountSource {
+  const rpc = createSolanaRpc(rpcUrl);
+  const b64 = getBase64Encoder();
+  const b58 = getBase58Decoder();
+  return async (programId, discriminator) => {
+    const res = await rpc
+      .getProgramAccounts(address(programId), {
+        encoding: "base64",
+        filters: [
+          {
+            memcmp: {
+              offset: 0n,
+              bytes: b58.decode(discriminator) as never,
+              encoding: "base58",
+            },
+          },
+        ],
+      })
+      .send();
+    return res.map((entry) => ({
+      owner: entry.account.owner as string,
+      data: new Uint8Array(b64.encode(entry.account.data[0])),
+    }));
+  };
+}
+
 export function createChainFromEnv(
   env: NodeJS.ProcessEnv = process.env
 ): Chain {
+  const rpcUrl = env.SOLANA_RPC_URL || "https://api.devnet.solana.com";
   return new AccountChain(
-    rpcAccountSource(env.SOLANA_RPC_URL || "https://api.devnet.solana.com"),
-    env.NEXT_PUBLIC_PROGRAM_ID || PROGRAM_ID
+    rpcAccountSource(rpcUrl),
+    env.NEXT_PUBLIC_PROGRAM_ID || PROGRAM_ID,
+    rpcProgramAccountSource(rpcUrl)
   );
 }
 
