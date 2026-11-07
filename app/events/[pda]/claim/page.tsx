@@ -1,4 +1,4 @@
-import { PageStub } from "../../../components/page-stub";
+import { ClaimView } from "./claim-view";
 
 export const metadata = { title: "Claim or refund | Event Pool" };
 
@@ -8,12 +8,5 @@ export default async function ClaimPage({
   params: Promise<{ pda: string }>;
 }) {
   const { pda } = await params;
-  return (
-    <PageStub
-      title="Claim or refund"
-      pda={pda}
-      description="Claim your attendee payout after the event, or get a refund if it was cancelled."
-      ticket="T27"
-    />
-  );
+  return <ClaimView pda={pda} />;
 }

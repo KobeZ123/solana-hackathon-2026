@@ -3,6 +3,7 @@ export * from "./create-event-form";
 export * from "./format";
 export * from "./gate-key";
 export * from "./hooks";
+export * from "./member-view";
 export * from "./payout";
 export * from "./pda";
 export * from "./scan";
