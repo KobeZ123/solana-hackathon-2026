@@ -2,6 +2,7 @@
 
 import useSWR from "swr";
 import type { Address } from "@solana/kit";
+import { fetchAllMaybeEvent, type Event } from "../../generated/event_pool";
 import { useCluster } from "../../components/cluster-context";
 import { useSolanaClient } from "../solana-client-context";
 import {
@@ -21,6 +22,30 @@ export function useEventTickets(pda: string | undefined, refreshMs = 10_000) {
   );
   return {
     tickets: data as TicketRecord[] | undefined,
+    isLoading,
+    error: error as Error | undefined,
+    mutate,
+  };
+}
+
+/** Batch-read Event accounts (one RPC call). Map is keyed by event address; missing accounts are absent. */
+export function useEventsByAddress(addresses: readonly string[]) {
+  const { cluster } = useCluster();
+  const client = useSolanaClient();
+  const key = [...addresses].sort().join(",");
+  const { data, error, isLoading, mutate } = useSWR(
+    key ? (["events-batch", cluster, key] as const) : null,
+    async ([, , k]) => {
+      const list = k.split(",") as Address[];
+      const accounts = await fetchAllMaybeEvent(client.rpc, list);
+      const map = new Map<string, Event>();
+      for (const a of accounts) if (a.exists) map.set(a.address, a.data);
+      return map;
+    },
+    { refreshInterval: 15_000, revalidateOnFocus: true }
+  );
+  return {
+    events: data as Map<string, Event> | undefined,
     isLoading,
     error: error as Error | undefined,
     mutate,
