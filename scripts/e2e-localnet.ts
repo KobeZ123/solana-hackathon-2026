@@ -509,7 +509,7 @@ async function vendorFlow() {
           sponsorship: big.sponsorship,
         }),
       ]),
-    /0x1782|SponsorshipBudgetExceeded/
+    /custom program error 6018|SponsorshipBudgetExceeded/
   );
   await send(host, [
     getRejectSponsorshipInstruction({
