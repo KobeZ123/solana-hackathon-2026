@@ -28,7 +28,7 @@ export type MemcmpFilter = {
   };
 };
 
-function memcmp(offset: bigint, base58: string): MemcmpFilter {
+export function memcmp(offset: bigint, base58: string): MemcmpFilter {
   return {
     memcmp: {
       offset,
